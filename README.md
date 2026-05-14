@@ -1,2 +1,14 @@
 # NTVDBM
 NT Virtual DosBox Machine This is a project that aims to transparently replace NTDVM with DOSBox. Developed for use in XP installations with UEFI, as a solution for playing Doom.
+
+My handler  runs MS-DOS applications without the need for NTVDM (since the Apple TV doesn't support BIOS). Furthermore, it creates a configuration file per folder (the configuration files are located in system32, but it creates a shortcut in the folder for them). The configuration files are created using the folder name + crc16 hash to ensure it's not the same game. The configuration file is global for the game folder (for example, c:\games\doom); all other executables (like setup.exe) will also use the same configuration file.
+
+There's also my "shortcut creator" system. Unfortunately, due to limitations in how Windows handles DOS applications, it's impossible to create a shortcut for a 16-bit executable without it becoming a PIF (Processed Intent File). PIFs depend on NTVDM, so this forced me to write a completely new solution from scratch, which was great because I was able to make improvements. The global context menu now has an item that creates a shortcut to the game on the desktop. It actually creates a .bat file with the game's name. This .bat file handles starting the game correctly, then it creates a shortcut to this .bat file on the desktop. But not only that, it will also automatically set the icon if the corresponding icon exists in the icons folder. To better understand: There's an icons folder in system32 called gameicons, inside it there's default.ico and icons for some games I've already created. If you create a shortcut for doom.exe, this handler will copy default.ico to doom+hash.ico. The hash is calculated based on the executable file, so icons can be shared among users to form a large icon library. I'm creating icons for the games I own and use, and I'll make them available together. If an icon already exists in the icon folder with the game's name and hash, the shortcut is created with the correct icon!
+
+When you click on the game, DOSBox is called with all the arguments and path to run the game correctly. When the game finishes, it automatically receives the exit command and returns to the desktop.
+
+<b>USAGE:</b>
+
+You need to download dosbox yourself, and place the executable and configuration files in system32, such as "dosbox.exe" and "dosbox.conf". Then, copy the files from this project (the gameicons folder, config, hdl.exe, and sendtotool.exe) to system32 as well. Merge the install.reg registry file (just double-click it), and everything will be ready.
+
+There are two other registry files, enable handler and disable handler; they act as the on/off switch for everything. Some specific programs may not work well with my project, so you may need to disable them before running certain software (such as DrivePack Solution).
