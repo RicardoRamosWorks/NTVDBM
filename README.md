@@ -25,7 +25,7 @@ There are two other registry files, enable handler and disable handler; they act
 
 "Create" wouldn't be the ideal word, but I couldn't find another. You don't necessarily need to create an icon from scratch. When you create a shortcut, the handler will copy default16.ico or default32.ico to a new file; the file name will be the same as the executable+hash. If a doom+hash.ico file already exists in the folder, but your shortcut to doom didn't receive the correct icon, your executable version is different and generated a different hash. To solve this, simply find the generic icon for doom+hash.ico, copy the icon with the image you want, and rename it accordingly.
 
-<b>Compatibility</>
+<b>Compatibility</b>
 
 All the games I tested from 1987 to 1999 ran perfectly (in the sense that there were no problems with the handler), I believe I achieved 100% compatibility with anything that should run in DOSBox.
 
