@@ -1,359 +1,454 @@
 #define INITGUID
+
 #include <windows.h>
 #include <shlobj.h>
 #include <objbase.h>
 #include <stdio.h>
 #include <string.h>
 
-#define DOSBOX_PATH "C:\\WINDOWS\\SYSTEM32\\DOSBox.exe"
+#define DOSBOX_PATH  "C:\\WINDOWS\\SYSTEM32\\DOSBox.exe"
 #define DEFAULT_CONF "C:\\WINDOWS\\SYSTEM32\\dosbox.conf"
-#define CONF_DIR "C:\\WINDOWS\\SYSTEM32\\CONF\\"
+#define CONF_DIR     "C:\\WINDOWS\\SYSTEM32\\CONF\\"
+
+#define TYPE_DOS    0
+#define TYPE_WIN32  1
+
+
+/*=====================================================*/
+/* CRC16 */
+/*=====================================================*/
 
 unsigned short crc16_string(const char *s)
 {
-    unsigned short crc = 0xFFFF;
+    unsigned short crc=0xFFFF;
 
-    while (*s)
+    while(*s)
     {
-        crc ^= (unsigned char)*s++;
+        crc^=(unsigned char)*s++;
 
-        for (int i = 0; i < 8; i++)
+        for(int i=0;i<8;i++)
         {
-            if (crc & 1)
-                crc = (crc >> 1) ^ 0xA001;
+            if(crc&1)
+                crc=(crc>>1)^0xA001;
             else
-                crc >>= 1;
+                crc>>=1;
         }
     }
 
     return crc;
 }
 
-int is_pe32(const char *path)
+
+/*=====================================================*/
+/* .COM => DOS sempre */
+/*=====================================================*/
+
+int is_com(const char *path)
 {
-    FILE *f = fopen(path, "rb");
+    const char *e=strrchr(path,'.');
 
-    if (!f)
-        return 1;
+    if(!e)
+        return 0;
 
-    unsigned char mz[2];
+    return lstrcmpiA(e,".com")==0;
+}
 
-    fread(mz, 1, 2, f);
 
-    if (mz[0] != 'M' || mz[1] != 'Z')
+/*=====================================================*/
+/* detector refinado */
+/*=====================================================*/
+
+int exe_type(const char *path)
+{
+    FILE *f=fopen(path,"rb");
+
+    if(!f)
+        return TYPE_DOS;
+
+    unsigned short mz;
+
+    if(fread(&mz,2,1,f)!=1)
     {
         fclose(f);
-        return 1;
+        return TYPE_DOS;
     }
 
-    fseek(f, 0x3C, SEEK_SET);
+    if(mz!=0x5A4D)
+    {
+        fclose(f);
+        return TYPE_DOS;
+    }
 
-    unsigned int pe_offset;
+    fseek(f,0,SEEK_END);
 
-    fread(&pe_offset, 4, 1, f);
+    long size=ftell(f);
 
-    fseek(f, pe_offset, SEEK_SET);
+    unsigned int peofs=0;
 
-    unsigned char pe[2];
+    fseek(f,0x3C,SEEK_SET);
 
-    fread(pe, 1, 2, f);
+    fread(&peofs,4,1,f);
+
+    if(peofs<64 || peofs>(size-4))
+    {
+        fclose(f);
+        return TYPE_DOS;
+    }
+
+    fseek(f,peofs,SEEK_SET);
+
+    unsigned char sig[4]={0};
+
+    fread(sig,1,4,f);
 
     fclose(f);
 
-    if (pe[0] == 'P' && pe[1] == 'E')
-        return 1;
+    if(
+        sig[0]=='P' &&
+        sig[1]=='E' &&
+        sig[2]==0 &&
+        sig[3]==0
+    )
+        return TYPE_WIN32;
 
-    return 0;
+    return TYPE_DOS;
 }
 
-void create_shortcut(const char *target, const char *shortcut)
+
+/*=====================================================*/
+/* pega EXE real + preserva args */
+/*=====================================================*/
+
+void get_real_exe(char *out)
 {
-    HRESULT hres;
+    char *cmd=GetCommandLineA();
 
-    hres = CoInitialize(NULL);
-
-    if (SUCCEEDED(hres))
+    if(*cmd=='"')
     {
-        IShellLink *psl;
+        cmd++;
 
-        hres = CoCreateInstance(
+        char *q=strchr(cmd,'"');
+
+        if(!q)
+        {
+            out[0]=0;
+            return;
+        }
+
+        cmd=q+1;
+    }
+    else
+    {
+        char *sp=strchr(cmd,' ');
+
+        if(!sp)
+        {
+            out[0]=0;
+            return;
+        }
+
+        cmd=sp+1;
+    }
+
+    while(*cmd==' ')
+        cmd++;
+
+    if(*cmd=='"')
+    {
+        cmd++;
+
+        char *q=strchr(cmd,'"');
+
+        if(!q)
+        {
+            out[0]=0;
+            return;
+        }
+
+        memcpy(out,cmd,q-cmd);
+
+        out[q-cmd]=0;
+    }
+    else
+    {
+        char *sp=strchr(cmd,' ');
+
+        if(sp)
+        {
+            memcpy(out,cmd,sp-cmd);
+
+            out[sp-cmd]=0;
+        }
+        else
+            lstrcpyA(out,cmd);
+    }
+}
+
+
+/*=====================================================*/
+/* cria config.conf.lnk */
+/*=====================================================*/
+
+void create_shortcut(
+    const char *target,
+    const char *shortcut
+)
+{
+    CoInitialize(NULL);
+
+    IShellLink *psl;
+
+    if(SUCCEEDED(
+        CoCreateInstance(
             &CLSID_ShellLink,
             NULL,
             CLSCTX_INPROC_SERVER,
             &IID_IShellLink,
             (LPVOID*)&psl
+        )))
+    {
+        psl->lpVtbl->SetPath(
+            psl,
+            target
         );
 
-        if (SUCCEEDED(hres))
-        {
-            IPersistFile *ppf;
+        IPersistFile *ppf;
 
-            psl->lpVtbl->SetPath(psl, target);
-
-            hres = psl->lpVtbl->QueryInterface(
+        if(SUCCEEDED(
+            psl->lpVtbl->QueryInterface(
                 psl,
                 &IID_IPersistFile,
                 (LPVOID*)&ppf
+            )))
+        {
+            WCHAR wsz[MAX_PATH];
+
+            MultiByteToWideChar(
+                CP_ACP,
+                0,
+                shortcut,
+                -1,
+                wsz,
+                MAX_PATH
             );
 
-            if (SUCCEEDED(hres))
-            {
-                WCHAR wsz[MAX_PATH];
+            ppf->lpVtbl->Save(
+                ppf,
+                wsz,
+                TRUE
+            );
 
-                MultiByteToWideChar(
-                    CP_ACP,
-                    0,
-                    shortcut,
-                    -1,
-                    wsz,
-                    MAX_PATH
-                );
-
-                ppf->lpVtbl->Save(ppf, wsz, TRUE);
-
-                ppf->lpVtbl->Release(ppf);
-            }
-
-            psl->lpVtbl->Release(psl);
+            ppf->lpVtbl->Release(ppf);
         }
 
-        CoUninitialize();
+        psl->lpVtbl->Release(psl);
     }
+
+    CoUninitialize();
 }
 
-int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nShow)
+
+
+/*=====================================================*/
+/* MAIN */
+/*=====================================================*/
+
+int WINAPI WinMain(
+HINSTANCE a,
+HINSTANCE b,
+LPSTR c,
+int d
+)
 {
     char exe[MAX_PATH];
 
-    /* =====================================================
-       FIX:
-       compatível com atalhos .lnk modernos
-    ===================================================== */
+    get_real_exe(exe);
 
-    lstrcpy(exe, GetCommandLineA());
-
-    char *p = exe;
-
-    /* pula nome do HDL */
-    if (*p == '"')
-    {
-        p++;
-
-        p = strchr(p, '"');
-
-        if (!p)
-            return 0;
-
-        p++;
-    }
-    else
-    {
-        p = strchr(p, ' ');
-
-        if (!p)
-            return 0;
-
-        p++;
-    }
-
-    while (*p == ' ')
-        p++;
-
-    lstrcpy(exe, p);
-
-    /* remove aspas */
-    if (exe[0] == '"')
-    {
-        memmove(exe, exe + 1, strlen(exe));
-
-        char *last = strrchr(exe, '"');
-
-        if (last)
-            *last = 0;
-    }
-
-    if (strlen(exe) == 0)
+    if(!exe[0])
         return 0;
 
-    /* evita loop */
+
     char self[MAX_PATH];
 
-    GetModuleFileName(NULL, self, MAX_PATH);
+    GetModuleFileNameA(
+        NULL,
+        self,
+        MAX_PATH
+    );
 
-    if (lstrcmpi(exe, self) == 0)
+    if(
+        lstrcmpiA(
+            exe,
+            self
+        )==0
+    )
         return 0;
 
-    /* =====================================================
-       EXECUTÁVEL WIN32 NORMAL
-    ===================================================== */
 
-   if (is_pe32(exe))
-{
-    STARTUPINFOA si;
-    PROCESS_INFORMATION pi;
+    /*========================================*/
+    /* WIN32 */
+    /*========================================*/
 
-    ZeroMemory(&si, sizeof(si));
-    ZeroMemory(&pi, sizeof(pi));
-
-    si.cb = sizeof(si);
-
-    /* pega linha original completa */
-    char cmdline[4096];
-
-    lstrcpy(cmdline, GetCommandLineA());
-
-    /* pula nome do HDL */
-    char *p = cmdline;
-
-    if (*p == '"')
+    if(
+        !is_com(exe) &&
+        exe_type(exe)==TYPE_WIN32
+    )
     {
-        p++;
+        STARTUPINFOA si={0};
+        PROCESS_INFORMATION pi={0};
 
-        p = strchr(p, '"');
+        si.cb=sizeof(si);
 
-        if (!p)
-            return 0;
-
-        p++;
-    }
-    else
-    {
-        p = strchr(p, ' ');
-
-        if (!p)
-            return 0;
-
-        p++;
-    }
-
-    while (*p == ' ')
-        p++;
-
-    /* executa exatamente como veio */
-    if (!CreateProcessA(
-        NULL,
-        p,
-        NULL,
-        NULL,
-        FALSE,
-        0,
-        NULL,
-        NULL,
-        &si,
-        &pi
-    ))
-    {
-        MessageBoxA(
+        CreateProcessA(
+            exe,
+            c,
             NULL,
-            p,
-            "CreateProcess Failed",
-            MB_OK
+            NULL,
+            FALSE,
+            0,
+            NULL,
+            NULL,
+            &si,
+            &pi
         );
+
+        return 0;
     }
 
-    return 0;
-}
 
-    /* =====================================================
-       DOS / 16-BIT
-    ===================================================== */
+
+    /*========================================*/
+    /* DOS */
+    /*========================================*/
 
     char dir[MAX_PATH];
-    char name[MAX_PATH];
-    char folder[MAX_PATH];
 
-    lstrcpy(dir, exe);
+    lstrcpyA(dir,exe);
 
-    char *slash = strrchr(dir, '\\');
+    char *slash=
+        strrchr(dir,'\\');
 
-    if (!slash)
+    if(!slash)
         return 0;
 
-    lstrcpy(name, slash + 1);
 
-    *slash = 0;
+    char name[MAX_PATH];
 
-    char *lastslash = strrchr(dir, '\\');
+    lstrcpyA(
+        name,
+        slash+1
+    );
 
-    if (lastslash)
-        lstrcpy(folder, lastslash + 1);
+    *slash=0;
+
+
+    char folder[MAX_PATH];
+
+    char *last=
+        strrchr(
+            dir,
+            '\\'
+        );
+
+    if(last)
+        lstrcpyA(
+            folder,
+            last+1
+        );
     else
-        lstrcpy(folder, dir);
+        lstrcpyA(
+            folder,
+            dir
+        );
 
-    unsigned short crc = crc16_string(dir);
 
-    char confpath[MAX_PATH];
+    unsigned short crc=
+        crc16_string(dir);
 
-    wsprintf(
-        confpath,
+
+    char conf[MAX_PATH];
+
+    wsprintfA(
+        conf,
         "%s%s_%04X.conf",
         CONF_DIR,
         folder,
         crc
     );
 
-    DWORD attrs = GetFileAttributes(confpath);
 
-    if (attrs == INVALID_FILE_ATTRIBUTES)
+    if(
+        GetFileAttributesA(conf)
+        ==
+        INVALID_FILE_ATTRIBUTES
+    )
     {
-        CopyFile(
+        CopyFileA(
             DEFAULT_CONF,
-            confpath,
+            conf,
             TRUE
         );
     }
 
-    /* =====================================================
-       cria config.conf.lnk
-    ===================================================== */
 
     char shortcut[MAX_PATH];
 
-    wsprintf(
+    wsprintfA(
         shortcut,
         "%s\\config.conf.lnk",
         dir
     );
 
-    if (GetFileAttributes(shortcut) == INVALID_FILE_ATTRIBUTES)
+
+    if(
+        GetFileAttributesA(shortcut)
+        ==
+        INVALID_FILE_ATTRIBUTES
+    )
     {
         create_shortcut(
-            confpath,
+            conf,
             shortcut
         );
     }
 
-    /* =====================================================
-       COMANDO DOSBOX
-    ===================================================== */
+
+    SetEnvironmentVariableA(
+        "SDL_STDIO_REDIRECT",
+        "0"
+    );
+
 
     char cmd[4096];
 
-    wsprintf(
+    wsprintfA(
         cmd,
+
         "\"%s\" "
         "-conf \"%s\" "
         "-noconsole "
         "-exit "
+		"-c \"echo off\" "
+		"-c \"cls\" "
         "-c \"mount c '%s'\" "
         "-c \"c:\" "
-        "-c \"call %s\" "
-		"-c \"exit\"",
+		"-c \"cls\" "
+        "-c \"%s\" "
+        "-c \"exit\"",
+
         DOSBOX_PATH,
-        confpath,
+        conf,
         dir,
         name
     );
 
-    STARTUPINFO si;
-    PROCESS_INFORMATION pi;
 
-    ZeroMemory(&si, sizeof(si));
-    ZeroMemory(&pi, sizeof(pi));
+    STARTUPINFOA si={0};
+    PROCESS_INFORMATION pi={0};
 
-    si.cb = sizeof(si);
+    si.cb=sizeof(si);
 
-    CreateProcess(
+    CreateProcessA(
         NULL,
         cmd,
         NULL,
@@ -361,7 +456,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nShow)
         FALSE,
         0,
         NULL,
-        NULL,
+        dir,
         &si,
         &pi
     );
