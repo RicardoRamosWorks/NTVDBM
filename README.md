@@ -1,6 +1,8 @@
 # NTVDBM
 
-<img src:https://raw.githubusercontent.com/RicardoRamosWorks/ricardoramosworks.github.io/refs/heads/main/Images/ntVDBM.png></img>
+
+![Imagem](https://raw.githubusercontent.com/RicardoRamosWorks/ricardoramosworks.github.io/refs/heads/main/Images/ntVDBM.png)
+
 NT Virtual DosBox Machine This is a project that aims to transparently replace NTDVM with DOSBox. Developed for use in XP installations with UEFI, as a solution for playing Doom.
 
 My handler  runs MS-DOS applications without the need for NTVDM (since the Apple TV doesn't support BIOS). Furthermore, it creates a configuration file per folder (the configuration files are located in system32, but it creates a shortcut in the folder for them). The configuration files are created using the folder name + crc16 hash to ensure it's not the same game. The configuration file is global for the game folder (for example, c:\games\doom); all other executables (like setup.exe) will also use the same configuration file.
