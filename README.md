@@ -19,23 +19,23 @@ Currently, all MS-DOS executables and combos work wonderfully. But 16-bit Window
 
 The project has a selection of pre-configured icons for some classic games I own. It's not guaranteed that your doom.exe will appear with the correct icon, as the icon is associated with the executable via checksum. So, if your doom.exe is a different version than the one I used, you will have to create the icon for your executable.
 
-<b>USAGE:</b>
+## USAGE:
 
 You need to download dosbox yourself, and place the executable and configuration files in system32, such as "dosbox.exe" and "dosbox.conf". Then, copy the files from this project (the gameicons folder, config, hdl.exe, and sendtotool.exe) to system32 as well. Merge the install.reg registry file (just double-click it), and everything will be ready.
 
 There are two other registry files, enable handler and disable handler; they act as the on/off switch for everything. Some specific programs may not work well with my project, so you may need to disable them before running certain software (such as DrivePack Solution).
 
-<b>Creating Icons</b>
+## Creating Icons
 
 "Create" wouldn't be the ideal word, but I couldn't find another. You don't necessarily need to create an icon from scratch. When you create a shortcut, the handler will copy default16.ico or default32.ico to a new file; the file name will be the same as the executable+hash. If a doom+hash.ico file already exists in the folder, but your shortcut to doom didn't receive the correct icon, your executable version is different and generated a different hash. To solve this, simply find the generic icon for doom+hash.ico, copy the icon with the image you want, and rename it accordingly.
 
-<b>Compatibility</b>
+## Compatibility
 
 All the games I tested from 1987 to 1999 ran perfectly (in the sense that there were no problems with the handler), I believe I achieved 100% compatibility with anything that should run in DOSBox.
 
 Win32 executables are passed to the kernel normally; I believe I've fixed the problem with too many arguments in the call, so the handler (so far) no longer needs to be disabled for compatibility. The Shortcut Creator also differentiates between MSDOS icons and Windows icons when creating the generic icon.
 
-<b>The future</b>
+## The future
 
 I intend to scale this project to something much larger, creating a universal game launcher using only Windows shell resources – something Windows should have had since Windows 98, in my opinion – a CLSID folder (a system folder, like My Documents or My Computer) that stores game shortcuts, but not that awful thing that Windows Vista and 7 had. I'd like something that creates shortcuts within it, and that uses a database containing information about the game, such as year, developer, publisher, screenshot, cover art, etc., all directly in the Explorer shell, and built in a simple way, with fast and transparent execution.
 
