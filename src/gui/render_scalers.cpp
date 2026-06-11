@@ -238,25 +238,7 @@ ScalerSimpleBlock_t ScaleNormal2x = {
 	}
 };
 
-ScalerSimpleBlock_t ScaleNormal3x = {
-	"Normal3x",
-	GFX_CAN_8|GFX_CAN_15|GFX_CAN_16|GFX_CAN_32,
-	3,3,
-	{
-		{	Normal3x_8_8_L,		Normal3x_8_15_L,	Normal3x_8_16_L,	Normal3x_8_32_L },
-		{	             0,		Normal3x_15_15_L,	Normal3x_15_16_L,	Normal3x_15_32_L},
-		{	             0,		Normal3x_16_15_L,	Normal3x_16_16_L,	Normal3x_16_32_L},
-		{	             0,		Normal3x_32_15_L,	Normal3x_32_16_L,	Normal3x_32_32_L},
-		{	Normal3x_8_8_L,		Normal3x_9_15_L,	Normal3x_9_16_L,	Normal3x_9_32_L }
-	},
-	{
-		{	Normal3x_8_8_R,		Normal3x_8_15_R,	Normal3x_8_16_R,	Normal3x_8_32_R },
-		{	             0,		Normal3x_15_15_R,	Normal3x_15_16_R,	Normal3x_15_32_R},
-		{	             0,		Normal3x_16_15_R,	Normal3x_16_16_R,	Normal3x_16_32_R},
-		{	             0,		Normal3x_32_15_R,	Normal3x_32_16_R,	Normal3x_32_32_R},
-		{	Normal3x_8_8_R,		Normal3x_9_15_R,	Normal3x_9_16_R,	Normal3x_9_32_R }
-	}
-};
+
 
 #if RENDER_USE_ADVANCED_SCALERS>0
 ScalerSimpleBlock_t ScaleTV2x = {
@@ -279,25 +261,7 @@ ScalerSimpleBlock_t ScaleTV2x = {
 	}
 };
 
-ScalerSimpleBlock_t ScaleTV3x = {
-	"TV3x",
-	GFX_CAN_15|GFX_CAN_16|GFX_CAN_32|GFX_RGBONLY,
-	3,3,
-	{
-		{	0,		TV3x_8_15_L,	TV3x_8_16_L,	TV3x_8_32_L },
-		{	0,		TV3x_15_15_L,	TV3x_15_16_L,	TV3x_15_32_L},
-		{	0,		TV3x_16_15_L,	TV3x_16_16_L,	TV3x_16_32_L},
-		{	0,		TV3x_32_15_L,	TV3x_32_16_L,	TV3x_32_32_L},
-		{	0,		TV3x_9_15_L,	TV3x_9_16_L,	TV3x_9_32_L }
-	},
-	{
-		{	0,		TV3x_8_15_R,	TV3x_8_16_R,	TV3x_8_32_R },
-		{	0,		TV3x_15_15_R,	TV3x_15_16_R,	TV3x_15_32_R},
-		{	0,		TV3x_16_15_R,	TV3x_16_16_R,	TV3x_16_32_R},
-		{	0,		TV3x_32_15_R,	TV3x_32_16_R,	TV3x_32_32_R},
-		{	0,		TV3x_9_15_R,	TV3x_9_16_R,	TV3x_9_32_R }
-	}
-};
+
 
 ScalerSimpleBlock_t ScaleScan2x = {
 	"Scan2x",
@@ -319,25 +283,7 @@ ScalerSimpleBlock_t ScaleScan2x = {
 	}
 };
 
-ScalerSimpleBlock_t ScaleScan3x = {
-	"Scan3x",
-	GFX_CAN_15|GFX_CAN_16|GFX_CAN_32|GFX_RGBONLY,
-	3,3,
-	{
-		{	0,		Scan3x_8_15_L,	Scan3x_8_16_L,	Scan3x_8_32_L },
-		{	0,		Scan3x_15_15_L,	Scan3x_15_16_L,	Scan3x_15_32_L},
-		{	0,		Scan3x_16_15_L,	Scan3x_16_16_L,	Scan3x_16_32_L},
-		{	0,		Scan3x_32_15_L,	Scan3x_32_16_L,	Scan3x_32_32_L},
-		{	0,		Scan3x_9_15_L,	Scan3x_9_16_L,	Scan3x_9_32_L },
-	},
-	{
-		{	0,		Scan3x_8_15_R,	Scan3x_8_16_R,	Scan3x_8_32_R },
-		{	0,		Scan3x_15_15_R,	Scan3x_15_16_R,	Scan3x_15_32_R},
-		{	0,		Scan3x_16_15_R,	Scan3x_16_16_R,	Scan3x_16_32_R},
-		{	0,		Scan3x_32_15_R,	Scan3x_32_16_R,	Scan3x_32_32_R},
-		{	0,		Scan3x_9_15_R,	Scan3x_9_16_R,	Scan3x_9_32_R }
-	}
-};
+
 
 ScalerSimpleBlock_t ScaleRGB2x = {
 	"RGB2x",
@@ -359,98 +305,10 @@ ScalerSimpleBlock_t ScaleRGB2x = {
 	}
 };
 
-ScalerSimpleBlock_t ScaleRGB3x = {
-	"RGB3x",
-	GFX_CAN_15|GFX_CAN_16|GFX_CAN_32|GFX_RGBONLY,
-	3,3,
-	{
-		{	0,		RGB3x_8_15_L,	RGB3x_8_16_L,	RGB3x_8_32_L },
-		{	0,		RGB3x_15_15_L,	RGB3x_15_16_L,	RGB3x_15_32_L},
-		{	0,		RGB3x_16_15_L,	RGB3x_16_16_L,	RGB3x_16_32_L},
-		{	0,		RGB3x_32_15_L,	RGB3x_32_16_L,	RGB3x_32_32_L},
-		{	0,		RGB3x_9_15_L,	RGB3x_9_16_L,	RGB3x_9_32_L }
-	},
-	{
-		{	0,		RGB3x_8_15_R,	RGB3x_8_16_R,	RGB3x_8_32_R },
-		{	0,		RGB3x_15_15_R,	RGB3x_15_16_R,	RGB3x_15_32_R},
-		{	0,		RGB3x_16_15_R,	RGB3x_16_16_R,	RGB3x_16_32_R},
-		{	0,		RGB3x_32_15_R,	RGB3x_32_16_R,	RGB3x_32_32_R},
-		{	0,		RGB3x_9_15_R,	RGB3x_9_16_R,	RGB3x_9_32_R }
-	}
-};
+
 #endif
 
 /* Complex scalers - desabilitados por padrão para performance */
 #if RENDER_USE_ADVANCED_SCALERS>2
-ScalerComplexBlock_t ScaleAdvMame2x = {
-	"AdvMame2x",
-	GFX_CAN_8|GFX_CAN_15|GFX_CAN_16|GFX_CAN_32,
-	2,2,
-	{	AdvMame2x_8_L,AdvMame2x_16_L,AdvMame2x_16_L,AdvMame2x_32_L},
-	{	AdvMame2x_8_R,AdvMame2x_16_R,AdvMame2x_16_R,AdvMame2x_32_R}
-};
 
-ScalerComplexBlock_t ScaleAdvMame3x = {
-	"AdvMame3x",
-	GFX_CAN_8|GFX_CAN_15|GFX_CAN_16|GFX_CAN_32,
-	3,3,
-	{	AdvMame3x_8_L,AdvMame3x_16_L,AdvMame3x_16_L,AdvMame3x_32_L},
-	{	AdvMame3x_8_R,AdvMame3x_16_R,AdvMame3x_16_R,AdvMame3x_32_R}
-};
-
-ScalerComplexBlock_t ScaleHQ2x = {
-	"HQ2x",
-	GFX_CAN_15|GFX_CAN_16|GFX_CAN_32|GFX_RGBONLY,
-	2,2,
-	{	0,HQ2x_16_L,HQ2x_16_L,HQ2x_32_L},
-	{	0,HQ2x_16_R,HQ2x_16_R,HQ2x_32_R}
-};
-
-ScalerComplexBlock_t ScaleHQ3x = {
-	"HQ3x",
-	GFX_CAN_15|GFX_CAN_16|GFX_CAN_32|GFX_RGBONLY,
-	3,3,
-	{	0,HQ3x_16_L,HQ3x_16_L,HQ3x_32_L},
-	{	0,HQ3x_16_R,HQ3x_16_R,HQ3x_32_R}
-};
-
-ScalerComplexBlock_t ScaleSuper2xSaI = {
-	"Super2xSaI",
-	GFX_CAN_15|GFX_CAN_16|GFX_CAN_32|GFX_RGBONLY,
-	2,2,
-	{	0,Super2xSaI_16_L,Super2xSaI_16_L,Super2xSaI_32_L},
-	{	0,Super2xSaI_16_R,Super2xSaI_16_R,Super2xSaI_32_R}
-};
-
-ScalerComplexBlock_t Scale2xSaI = {
-	"2xSaI",
-	GFX_CAN_15|GFX_CAN_16|GFX_CAN_32|GFX_RGBONLY,
-	2,2,
-	{	0,_2xSaI_16_L,_2xSaI_16_L,_2xSaI_32_L},
-	{	0,_2xSaI_16_R,_2xSaI_16_R,_2xSaI_32_R}
-};
-
-ScalerComplexBlock_t ScaleSuperEagle = {
-	"SuperEagle",
-	GFX_CAN_15|GFX_CAN_16|GFX_CAN_32|GFX_RGBONLY,
-	2,2,
-	{	0,SuperEagle_16_L,SuperEagle_16_L,SuperEagle_32_L},
-	{	0,SuperEagle_16_R,SuperEagle_16_R,SuperEagle_32_R}
-};
-
-ScalerComplexBlock_t ScaleAdvInterp2x = {
-	"AdvInterp2x",
-	GFX_CAN_15|GFX_CAN_16|GFX_CAN_32|GFX_RGBONLY,
-	2,2,
-	{	0,AdvInterp2x_15_L,AdvInterp2x_16_L,AdvInterp2x_32_L},
-	{	0,AdvInterp2x_15_R,AdvInterp2x_16_R,AdvInterp2x_32_R}
-};
-
-ScalerComplexBlock_t ScaleAdvInterp3x = {
-	"AdvInterp3x",
-	GFX_CAN_15|GFX_CAN_16|GFX_CAN_32|GFX_RGBONLY,
-	3,3,
-	{	0,AdvInterp3x_15_L,AdvInterp3x_16_L,AdvInterp3x_32_L},
-	{	0,AdvInterp3x_15_R,AdvInterp3x_16_R,AdvInterp3x_32_R}
-};
 #endif

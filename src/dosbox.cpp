@@ -476,7 +476,7 @@ void DOSBOX_Init(void) {
 	secprop->AddInitFunction(&PAGING_Init);   // done
 	secprop->AddInitFunction(&MEM_Init);      // done
 	secprop->AddInitFunction(&HARDWARE_Init); // done
-	Pint = secprop->Add_int("memsize", Property::Changeable::WhenIdle, 30);
+	Pint = secprop->Add_int("memsize", Property::Changeable::WhenIdle, 23);
 	Pint->SetMinMax(1, 383);
 	Pint->Set_help("\n");
 	secprop->AddInitFunction(&CALLBACK_Init);
@@ -502,14 +502,8 @@ void DOSBOX_Init(void) {
 	const char *scalers[] = {
 		"none",
 		"normal2x",
-		"normal3x",
 #if RENDER_USE_ADVANCED_SCALERS > 2
-		"advmame2x",
-		"advinterp2x",
-		"hq2x",
-		"2xsai",
-		"super2xsai",
-		"supereagle",
+
 #endif
 #if RENDER_USE_ADVANCED_SCALERS > 0
 		"tv2x",

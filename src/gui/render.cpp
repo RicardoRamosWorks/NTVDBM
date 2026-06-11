@@ -353,8 +353,7 @@ static void RENDER_Reset(void) {
 	if ((dblh && dblw) || (render.scale.forced && !dblh && !dblw)) {
 		if (render.scale.size == 2)
 			simpleBlock = &ScaleNormal2x;
-		else if (render.scale.size == 3)
-			simpleBlock = &ScaleNormal3x;
+		
 		else
 			simpleBlock = &ScaleNormal1x;
 
@@ -362,15 +361,13 @@ static void RENDER_Reset(void) {
 		switch (render.scale.op) {
 		case scalerOpTV:
 			if (render.scale.size == 2) simpleBlock = &ScaleTV2x;
-			else if (render.scale.size == 3) simpleBlock = &ScaleTV3x;
+			
 			break;
 		case scalerOpRGB:
 			if (render.scale.size == 2) simpleBlock = &ScaleRGB2x;
-			else if (render.scale.size == 3) simpleBlock = &ScaleRGB3x;
 			break;
 		case scalerOpScan:
 			if (render.scale.size == 2) simpleBlock = &ScaleScan2x;
-			else if (render.scale.size == 3) simpleBlock = &ScaleScan3x;
 			break;
 		default:
 			break;
@@ -619,15 +616,10 @@ static bool RENDER_GetShader(std::string& shader_path, char *old_src) {
 		buf << fshader.rdbuf();
 		fshader.close();
 	} else if (shader_path == "advinterp2x") buf << advinterp2x_glsl;
-	else if (shader_path == "advinterp3x") buf << advinterp3x_glsl;
 	else if (shader_path == "advmame2x")   buf << advmame2x_glsl;
-	else if (shader_path == "advmame3x")   buf << advmame3x_glsl;
 	else if (shader_path == "rgb2x")       buf << rgb2x_glsl;
-	else if (shader_path == "rgb3x")       buf << rgb3x_glsl;
 	else if (shader_path == "scan2x")      buf << scan2x_glsl;
-	else if (shader_path == "scan3x")      buf << scan3x_glsl;
 	else if (shader_path == "tv2x")        buf << tv2x_glsl;
-	else if (shader_path == "tv3x")        buf << tv3x_glsl;
 	else if (shader_path == "sharp")       buf << sharp_glsl;
 
 	if (!buf.str().empty()) {
@@ -705,73 +697,26 @@ void RENDER_Init(Section * sec) {
 		render.scale.op = scalerOpNormal;
 		render.scale.size = 2;
 	}
-	else if (scaler == "normal3x") {
-		render.scale.op = scalerOpNormal;
-		render.scale.size = 3;
-	}
+	
 #if RENDER_USE_ADVANCED_SCALERS>2
-	else if (scaler == "advmame2x") {
-		render.scale.op = scalerOpAdvMame;
-		render.scale.size = 2;
-	}
-	else if (scaler == "advmame3x") {
-		render.scale.op = scalerOpAdvMame;
-		render.scale.size = 3;
-	}
-	else if (scaler == "advinterp2x") {
-		render.scale.op = scalerOpAdvInterp;
-		render.scale.size = 2;
-	}
-	else if (scaler == "advinterp3x") {
-		render.scale.op = scalerOpAdvInterp;
-		render.scale.size = 3;
-	}
-	else if (scaler == "hq2x") {
-		render.scale.op = scalerOpHQ;
-		render.scale.size = 2;
-	}
-	else if (scaler == "hq3x") {
-		render.scale.op = scalerOpHQ;
-		render.scale.size = 3;
-	}
-	else if (scaler == "2xsai") {
-		render.scale.op = scalerOpSaI;
-		render.scale.size = 2;
-	}
-	else if (scaler == "super2xsai") {
-		render.scale.op = scalerOpSuperSaI;
-		render.scale.size = 2;
-	}
-	else if (scaler == "supereagle") {
-		render.scale.op = scalerOpSuperEagle;
-		render.scale.size = 2;
-	}
+
 #endif
 #if RENDER_USE_ADVANCED_SCALERS>0
 	else if (scaler == "tv2x") {
 		render.scale.op = scalerOpTV;
 		render.scale.size = 2;
 	}
-	else if (scaler == "tv3x") {
-		render.scale.op = scalerOpTV;
-		render.scale.size = 3;
-	}
+	
 	else if (scaler == "rgb2x") {
 		render.scale.op = scalerOpRGB;
 		render.scale.size = 2;
 	}
-	else if (scaler == "rgb3x") {
-		render.scale.op = scalerOpRGB;
-		render.scale.size = 3;
-	}
+	
 	else if (scaler == "scan2x") {
 		render.scale.op = scalerOpScan;
 		render.scale.size = 2;
 	}
-	else if (scaler == "scan3x") {
-		render.scale.op = scalerOpScan;
-		render.scale.size = 3;
-	}
+	
 #endif
 
 #if C_OPENGL

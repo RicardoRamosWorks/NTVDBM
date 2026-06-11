@@ -57,12 +57,7 @@ typedef enum {
 typedef enum scalerOperation {
 	scalerOpNormal,
 #if RENDER_USE_ADVANCED_SCALERS>2
-	scalerOpAdvMame,
-	scalerOpAdvInterp,
-	scalerOpHQ,
-	scalerOpSaI,
-	scalerOpSuperSaI,
-	scalerOpSuperEagle,
+
 #endif
 #if RENDER_USE_ADVANCED_SCALERS>0
 	scalerOpTV,
@@ -125,26 +120,14 @@ extern ScalerSimpleBlock_t ScaleNormal1x;
 extern ScalerSimpleBlock_t ScaleNormalDw;
 extern ScalerSimpleBlock_t ScaleNormalDh;
 extern ScalerSimpleBlock_t ScaleNormal2x;
-extern ScalerSimpleBlock_t ScaleNormal3x;
 #if RENDER_USE_ADVANCED_SCALERS>0
 extern ScalerSimpleBlock_t ScaleTV2x;
-extern ScalerSimpleBlock_t ScaleTV3x;
 extern ScalerSimpleBlock_t ScaleRGB2x;
-extern ScalerSimpleBlock_t ScaleRGB3x;
 extern ScalerSimpleBlock_t ScaleScan2x;
-extern ScalerSimpleBlock_t ScaleScan3x;
 #endif
 /* Complex scalers */
 #if RENDER_USE_ADVANCED_SCALERS>2
-extern ScalerComplexBlock_t ScaleHQ2x;
-extern ScalerComplexBlock_t ScaleHQ3x;
-extern ScalerComplexBlock_t Scale2xSaI;
-extern ScalerComplexBlock_t ScaleSuper2xSaI;
-extern ScalerComplexBlock_t ScaleSuperEagle;
-extern ScalerComplexBlock_t ScaleAdvMame2x;
-extern ScalerComplexBlock_t ScaleAdvMame3x;
-extern ScalerComplexBlock_t ScaleAdvInterp2x;
-extern ScalerComplexBlock_t ScaleAdvInterp3x;
+
 #endif
 #if RENDER_USE_ADVANCED_SCALERS>1
 extern ScalerLineBlock_t ScalerCache;

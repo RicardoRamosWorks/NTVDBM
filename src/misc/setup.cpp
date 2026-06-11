@@ -828,7 +828,7 @@ bool Config::PrintConfig(char const *const configfilename) const {
 #  ╟──────────────────────┼──────────────────────────────────────────────────────────────╢
 #  ║     ☻ autolock ☻     │ Mouse will automatically lock                                ║
 #  ╟──────────────────────┼──────────────────────────────────────────────────────────────╢
-#  ║    ☻ sensitivity ☻   │ Message not Found!                                           ║
+#  ║    ☻ sensitivity ☻   │ Mouse sensitivity                                            ║
 #  ╟──────────────────────┼──────────────────────────────────────────────────────────────╢
 #  ║    ☻ waitonerror ☻   │ Wait before closing if NTVDBM has an error                   ║
 #  ╟──────────────────────┼──────────────────────────────────────────────────────────────╢
@@ -845,10 +845,8 @@ bool Config::PrintConfig(char const *const configfilename) const {
 #	║  ☼ language ☼	 │ Select another language file										 ║
 #	╟────────────────┼───────────────────────────────────────────────────────────────────╢
 #	║   ☼ machine ☼	 │ The type of machine NTVDBM tries to emulate						 ║
-#	║				 │ Values: [hercules] [cga] [ega] [vgaonly] [svga_s3] [svga_et3000]	 ║  
-#	║				 │ [svga_et4000] [svga_paradise] [vesa_nolfb] [vesa_oldvbe]			 ║
-#	╟────────────────┼───────────────────────────────────────────────────────────────────╢
-#	║  ☼ captures ☼	 │ Directory where screenshot get captured							 ║
+#	║				 │ Values: [svga_s3] [svga_et3000] [svga_et4000] [svga_paradise]	 ║  
+#	║				 │ [vesa_nolfb] [vesa_oldvbe]										 ║
 #	╟────────────────┼───────────────────────────────────────────────────────────────────╢
 #	║				 │ Amount of memory NTVDBM has in megabytes							 ║
 #	║   ☼ memsize ☼	 │ This value is best left at its default to avoid problems,		 ║
@@ -868,7 +866,7 @@ bool Config::PrintConfig(char const *const configfilename) const {
 #	║					│ then the scaler will be used even if the result might not be desired							║
 #	║     § scaler §	│ To fit a scaler in the resolution used at full screen may require a border or side bars,		║
 #	║					│ to fill the screen entirely, depending on your hardware, a different scaler might work		║
-#	║					│ Values: [none] [normal2x] [normal3x] [tv2x] [rgb2x] [scan2x]									║
+#	║					│ Values: [none] [normal2x] [tv2x] [rgb2x] [scan2x]												║
 #	╟───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────╢
 #	║					│ Path to GLSL shader source to use with OpenGL output ("none" to disable)						║
 #	║	 § glshader §	│ Can be either an absolute path, a file in the "glshaders" subdirectory						║
@@ -923,7 +921,7 @@ bool Config::PrintConfig(char const *const configfilename) const {
 #	║  • nosound •  │ Enable silent mode, sound is still emulated though													║
 #	╟───────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────╢
 #	║    • rate •   │ Mixer sample rate, setting any device's rate higher than this will probably lower their sound quality ║
-#	║               │ Values: [49716] [48000] [44100] [32000] [22050] [16000] [11025] [8000]								║
+#	║               │ Values: [22050] [16000] [11025] [8000]																║
 #	╟───────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────╢
 #	║ • blocksize • │ Mixer block size, larger blocks might help sound stuttering but sound will also be more lagged		║
 #	║               │ Values: [512] [256] [1024] [2048] [4096] [8192]														║
@@ -959,7 +957,7 @@ bool Config::PrintConfig(char const *const configfilename) const {
 #	║                │ Values: [default] [compat] [fast]																	║
 #	╟────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────╢
 #	║   ♫ oplrate ♫  │ Sample rate of OPL music emulation. Use 49716 for highest quality (set the mixer rate accordingly)	║
-#	║                │ Values: [44100] [49716] [48000] [32000] [22050] [16000] [11025] [8000]								║
+#	║                │ Values: [22050] [16000] [11025] [8000]																║
 #	╟────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────╢
 #	║ ♫ fmstrength ♫ │ Strength of the FM playback volume in percent, in relation to PCM playback volume. Default is 150	║
 #	║                │ Values: [1] to [1000] (0.01x to 10x)																	║
@@ -972,7 +970,7 @@ bool Config::PrintConfig(char const *const configfilename) const {
 #	║ ♪ pcspeaker ♪ │ Enable PC-Speaker emulation									 ║
 #	╟───────────────┼────────────────────────────────────────────────────────────────╢
 #	║   ♪ pcrate ♪  │ Sample rate of the PC-Speaker sound generation				 ║
-#	║               │ Values: [44100] [48000] [32000] [22050] [16000] [11025] [8000] ║
+#	║               │ Values: [22050] [16000] [11025] [8000]						 ║
 #	╚═══════════════╧════════════════════════════════════════════════════════════════╝
 
 {{SPEAKER_VALUES}}
