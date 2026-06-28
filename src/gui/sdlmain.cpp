@@ -857,18 +857,6 @@ void GFX_CaptureMouse(void) {
 	mouselocked=sdl.mouse.locked;
 }
 
-void GFX_UpdateSDLCaptureState(void) {
-	if (sdl.mouse.locked) {
-		SDL_WM_GrabInput(SDL_GRAB_ON);
-		SDL_ShowCursor(SDL_DISABLE);
-	} else {
-		SDL_WM_GrabInput(SDL_GRAB_OFF);
-		if (sdl.mouse.autoenable || !sdl.mouse.autolock) SDL_ShowCursor(SDL_ENABLE);
-	}
-	CPU_Reset_AutoAdjust();
-	GFX_SetTitle(-1,-1,false);
-}
-
 bool mouselocked;
 static void CaptureMouse(bool pressed) {
 	if (!pressed) return;
@@ -938,7 +926,6 @@ bool GFX_LazyFullscreenRequested(void) {
 
 void GFX_RestoreMode(void) {
 	GFX_SetSize(sdl.draw.width,sdl.draw.height,sdl.draw.flags,sdl.draw.scalex,sdl.draw.scaley,sdl.draw.callback);
-	GFX_UpdateSDLCaptureState();
 }
 
 // Início de atualização otimizado

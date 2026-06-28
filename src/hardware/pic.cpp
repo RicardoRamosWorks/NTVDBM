@@ -24,7 +24,7 @@
 #include "timer.h"
 #include "setup.h"
 
-#define PIC_QUEUESIZE 512
+#define PIC_QUEUESIZE 8192
 
 struct PIC_Controller {
 	Bitu icw_words;
@@ -117,10 +117,7 @@ Bitu PIC_IRQCheck = 0; //Maybe make it a bool and/or ensure 32bit size (x86 dyna
 
 
 void PIC_Controller::set_imr(Bit8u val) {
-	if (GCC_UNLIKELY(machine == MCH_PCJR)) {
-		//irq 6 is a NMI on the PCJR
-		if (this == &master) val &= ~(1 <<(6));
-	}
+	if (this == &master) val &= ~(1 <<(6));
 	Bit8u change = (imr) ^ (val); //Bits that have changed become 1.
 	imr  =  val;
 	imrr = ~val;
@@ -588,10 +585,7 @@ public:
 		PIC_SetIRQMask(2,false);					/* Enable second pic */
 		PIC_SetIRQMask(8,false);					/* Enable RTC IRQ */
 
-		if (machine==MCH_PCJR) {
-			/* Enable IRQ6 (replacement for the NMI for PCJr) */
-			PIC_SetIRQMask(6,false);
-		}
+
 		ReadHandler[0].Install(0x20,read_command,IO_MB);
 		ReadHandler[1].Install(0x21,read_data,IO_MB);
 		WriteHandler[0].Install(0x20,write_command,IO_MB);

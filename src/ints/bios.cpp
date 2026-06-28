@@ -48,20 +48,7 @@ void CMOS_SetRegister(Bitu regNr, Bit8u val); //For setting equipment word
 #define PIT_TICK_RATE 1193180
 #endif
 
-// Estrutura para data do DOS (se não existir em outro lugar)
-struct DOS_Date {
-	Bit8u day;
-	Bit8u month;
-	Bit16u year;
-};
-
-struct DOS_Block {
-	DOS_Date date;
-	// outros membros se necessário
-};
-
-// Declaração externa da variável dos
-extern DOS_Block dos;
+#include "dos_inc.h"
 static Bitu INT70_Handler(void) {
 	/* Acknowledge irq with cmos */
 	IO_Write(0x70,0xc);
@@ -338,7 +325,7 @@ static Bitu INT8_Handler(void) {
 
 	/* decrement FDD motor timeout counter; roll over on earlier PC, stop at zero on later PC */
 	Bit8u val = mem_readb(BIOS_DISK_MOTOR_TIMEOUT);
-	if (val || !IS_EGAVGA_ARCH) mem_writeb(BIOS_DISK_MOTOR_TIMEOUT,val-1);
+	if (val || true) mem_writeb(BIOS_DISK_MOTOR_TIMEOUT,val-1);
 	/* clear FDD motor bits when counter reaches zero */
 	if (val == 1) mem_writeb(BIOS_DRIVE_RUNNING,mem_readb(BIOS_DRIVE_RUNNING) & 0xF0);
 	return CBRET_NONE;
@@ -798,7 +785,7 @@ unhandled:
 		LOG(LOG_BIOS,LOG_ERROR)("INT15:Unknown call %4X",reg_ax);
 		reg_ah=0x86;
 		CALLBACK_SCF(true);
-		if ((IS_EGAVGA_ARCH) || (machine==MCH_CGA)) {
+		if (true) {
 			/* relict from comparisons, as int15 exits with a retf2 instead of an iret */
 			CALLBACK_SZF(false);
 		}
@@ -848,7 +835,7 @@ static Bitu Reboot_Handler(void) {
 
 void BIOS_SetEquipment(Bit16u equipment) {
 	mem_writew(BIOS_CONFIGURATION,equipment);
-	if (IS_EGAVGA_ARCH) equipment &= ~0x30; //EGA/VGA startup display mode differs in CMOS
+	equipment &= ~0x30; //EGA/VGA startup display mode differs in CMOS
 	CMOS_SetRegister(0x14,(Bit8u)(equipment&0xff)); //Should be updated on changes
 }
 
@@ -1064,13 +1051,7 @@ public:
 		config|=0x2;
 #endif
 		switch (machine) {
-		case MCH_HERC:
-			//Startup monochrome
-			config|=0x30;
-			break;
 		case EGAVGA_ARCH_CASE:
-		case MCH_CGA:
-
 		default:
 			//EGA VGA
 			config|=0;

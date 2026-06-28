@@ -225,7 +225,6 @@ void vga_write_p3d5(Bitu /*port*/,Bitu val,Bitu iolen) {
 
 		if (IS_EGAVGA_ARCH && !(val & 0x10)) {
 			vga.draw.vret_triggered=false;
-			if (GCC_UNLIKELY(machine==MCH_EGA)) PIC_DeActivateIRQ(9);
 		}
 		if (IS_VGA_ARCH) crtc(read_only)=(val & 128)>0;
 		else crtc(read_only)=false;

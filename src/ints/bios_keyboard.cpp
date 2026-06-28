@@ -140,14 +140,8 @@ static struct {
 bool BIOS_AddKeyToBuffer(Bit16u code) {
 	if (mem_readb(BIOS_KEYBOARD_FLAGS2)&8) return true;
 	Bit16u start,end,head,tail,ttail;
-	if (machine==MCH_PCJR) {
-		/* should be done for cga and others as well, to be tested */
-		start=0x1e;
-		end=0x3e;
-	} else {
-		start=mem_readw(BIOS_KEYBOARD_BUFFER_START);
-		end	 =mem_readw(BIOS_KEYBOARD_BUFFER_END);
-	}
+	start=mem_readw(BIOS_KEYBOARD_BUFFER_START);
+	end	 =mem_readw(BIOS_KEYBOARD_BUFFER_END);
 	head =mem_readw(BIOS_KEYBOARD_BUFFER_HEAD);
 	tail =mem_readw(BIOS_KEYBOARD_BUFFER_TAIL);
 	ttail=tail+2;
@@ -168,14 +162,8 @@ static void add_key(Bit16u code) {
 
 static bool get_key(Bit16u &code) {
 	Bit16u start,end,head,tail,thead;
-	if (machine==MCH_PCJR) {
-		/* should be done for cga and others as well, to be tested */
-		start=0x1e;
-		end=0x3e;
-	} else {
-		start=mem_readw(BIOS_KEYBOARD_BUFFER_START);
-		end	 =mem_readw(BIOS_KEYBOARD_BUFFER_END);
-	}
+	start=mem_readw(BIOS_KEYBOARD_BUFFER_START);
+	end	 =mem_readw(BIOS_KEYBOARD_BUFFER_END);
 	head =mem_readw(BIOS_KEYBOARD_BUFFER_HEAD);
 	tail =mem_readw(BIOS_KEYBOARD_BUFFER_TAIL);
 
@@ -436,10 +424,7 @@ normal_key:
 		if (scancode > MAX_SCAN_CODE) goto irq1_end;
 		if (flags1 & 0x08) { 					/* Alt is being pressed */
 			asciiscan=scan_to_scanascii[scancode].alt;
-#if 0 /* old unicode support disabled*/
-		} else if (ascii) {
-			asciiscan=(scancode << 8) | ascii;
-#endif
+
 		} else if (flags1 & 0x04) {					/* Ctrl is being pressed */
 			asciiscan=scan_to_scanascii[scancode].control;
 		} else if (flags1 & 0x03) {					/* Either shift is being pressed */
@@ -481,13 +466,6 @@ irq1_end:
 	mem_writeb(BIOS_KEYBOARD_FLAGS3,flags3);
 	mem_writeb(BIOS_KEYBOARD_LEDS,leds);
 	/*	IO_Write(0x20,0x20); moved out of handler to be virtualizable */
-#if 0
-	/* Signal the keyboard for next code */
-	/* In dosbox port 60 reads do this as well */
-	Bit8u old61=IO_Read(0x61);
-	IO_Write(0x61,old61 | 128);
-	IO_Write(0x64,0xae);
-#endif
 	return CBRET_NONE;
 }
 
@@ -678,26 +656,5 @@ void BIOS_SetupKeyboard(void) {
 	//	pop ax
 	//	iret
 
-	if (machine==MCH_PCJR) {
-		call_irq6=CALLBACK_Allocate();
-		CALLBACK_Setup(call_irq6,NULL,CB_IRQ6_PCJR,"PCJr kb irq");
-		RealSetVec(0x0e,CALLBACK_RealPointer(call_irq6));
-		// pseudocode for CB_IRQ6_PCJR:
-		//	push ax
-		//	in al, 0x60
-		//	cmp al, 0xe0
-		//	je skip
-		//	push ds
-		//	push 0x40
-		//	pop ds
-		//	int 0x09
-		//	pop ds
-		//	label skip:
-		//	cli
-		//	mov al, 0x20
-		//	out 0x20, al
-		//	pop ax
-		//	iret
-	}
 }
 

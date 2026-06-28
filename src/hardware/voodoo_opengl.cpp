@@ -1675,8 +1675,6 @@ void voodoo_ogl_reset_videomode(void) {
 
 	GFX_SwitchLazyFullscreen(true);
 
-	GFX_UpdateSDLCaptureState();
-
 	int value;
 
 	bool few_colors = false;

@@ -461,23 +461,6 @@ Bit32u get_PF(void) {
 }
 
 
-#if 0
-
-Bitu FillFlags(void) {
-	//	if (lflags.type==t_UNKNOWN) return reg_flags;
-	Bitu new_word=(reg_flags & ~FLAG_MASK);
-	if (get_CF()) new_word|=FLAG_CF;
-	if (get_PF()) new_word|=FLAG_PF;
-	if (get_AF()) new_word|=FLAG_AF;
-	if (get_ZF()) new_word|=FLAG_ZF;
-	if (get_SF()) new_word|=FLAG_SF;
-	if (get_OF()) new_word|=FLAG_OF;
-	reg_flags=new_word;
-	lflags.type=t_UNKNOWN;
-	return reg_flags;
-}
-
-#else
 
 #define DOFLAG_PF	reg_flags=(reg_flags & ~FLAG_PF) | parity_lookup[lf_resb];
 
@@ -1185,4 +1168,3 @@ void DestroyConditionFlags(void) {
 	lflags.type=t_UNKNOWN;
 }
 
-#endif

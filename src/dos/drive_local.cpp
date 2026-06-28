@@ -511,13 +511,7 @@ bool localFile::Seek(Bit32u * pos,Bit32u type) {
 		// Out of file range, pretend everythings ok
 		// and move file pointer top end of file... ?! (Black Thorne)
 		fseek(fhandle,0,SEEK_END);
-	};
-#if 0
-	fpos_t temppos;
-	fgetpos(fhandle,&temppos);
-	Bit32u * fake_pos=(Bit32u*)&temppos;
-	*pos=*fake_pos;
-#endif
+	};	
 	*pos=(Bit32u)ftell(fhandle);
 	last_action=NONE;
 	return true;

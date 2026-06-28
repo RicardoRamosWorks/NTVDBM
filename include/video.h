@@ -53,20 +53,7 @@ struct GFX_PalEntry {
 #define GFX_HARDWARE	0x2000
 
 #define GFX_CAN_RANDOM	0x4000		//If the interface can also do random access surface
-// Em sdlmain.h ou no cabeçalho apropriado
 
-#ifndef SDLMAIN_H
-#define SDLMAIN_H
-
-#include "SDL.h"
-#include "dosbox.h"
-
-// Funções exportadas
-SDL_Surface* SDL_SetVideoMode_Wrap(int width, int height, int bpp, Bit32u flags);
-void GFX_SetTitle(Bit32s cycles, int frameskip, bool paused);
-Bitu GFX_SetSize(Bitu width, Bitu height, Bitu flags, double scalex, double scaley, GFX_CallBack_t callback);
-
-#endif
 void GFX_Events(void);
 void GFX_SetPalette(Bitu start,Bitu count,GFX_PalEntry * entries);
 Bitu GFX_GetBestMode(Bitu flags);
@@ -89,7 +76,6 @@ void GFX_SwitchLazyFullscreen(bool lazy);
 bool GFX_LazyFullscreenRequested(void);
 void GFX_SwitchFullscreenNoReset(void);
 void GFX_RestoreMode(void);
-void GFX_UpdateSDLCaptureState(void);
 
 #if defined (WIN32)
 bool GFX_SDLUsingWinDIB(void);

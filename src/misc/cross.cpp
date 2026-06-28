@@ -320,24 +320,6 @@ FILE *fopen_wrap(const char *path, const char *mode) {
 		}
 	}
 
-#if 0
-	//Lightweight version, but then existing files can still be read, which is not ideal
-	if (strpbrk(mode,"aw+") != NULL) {
-		//LOG_MSG("pbrk ok");
-		char* check = realpath(path,NULL);
-		//Will be null if file doesn't exist.... ENOENT
-		//TODO What about unlink /proc/self/mem and then create it ?
-		//Should be safe for what we want..
-		if (check) {
-			if (strncmp(check,"/proc/",6) == 0) {
-				free(check);
-				return NULL;
-			}
-			free(check);
-		}
-	}
-	*/
-#endif // 0
 
 #endif // HAVE_REALPATH
 #endif

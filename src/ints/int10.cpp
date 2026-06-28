@@ -30,25 +30,7 @@ Int10Data int10;
 static Bitu call_10;
 static bool warned_ff=false;
 
-static Bitu INT10_Handler(void) {
-#if 0
-	switch (reg_ah) {
-	case 0x02:
-	case 0x03:
-	case 0x09:
-	case 0xc:
-	case 0xd:
-	case 0x0e:
-	case 0x10:
-	case 0x4f:
-
-		break;
-	default:
-		LOG(LOG_INT10,LOG_NORMAL)("Function AX:%04X , BX %04X DX %04X",reg_ax,reg_bx,reg_dx);
-		break;
-	}
-#endif
-	INT10_SetCurMode();
+static Bitu INT10_Handler(void) {	INT10_SetCurMode();
 
 	switch (reg_ah) {
 	case 0x00:								/* Set VideoMode */
@@ -73,32 +55,7 @@ static Bitu INT10_Handler(void) {
 		reg_ax=0;
 		break;
 	case 0x05:								/* Set Active Page */
-		if ((reg_al & 0x80) && IS_TANDY_ARCH) {
-			Bit8u crtcpu=real_readb(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE);
-			switch (reg_al) {
-			case 0x80:
-				reg_bh=crtcpu & 7;
-				reg_bl=(crtcpu >> 3) & 0x7;
-				break;
-			case 0x81:
-				crtcpu=(crtcpu & 0xc7) | ((reg_bl & 7) << 3);
-				break;
-			case 0x82:
-				crtcpu=(crtcpu & 0xf8) | (reg_bh & 7);
-				break;
-			case 0x83:
-				crtcpu=(crtcpu & 0xc0) | (reg_bh & 7) | ((reg_bl & 7) << 3);
-				break;
-			}
-			if (machine==MCH_PCJR) {
-				/* always return graphics mapping, even for invalid values of AL */
-				reg_bh=crtcpu & 7;
-				reg_bl=(crtcpu >> 3) & 0x7;
-			}
-			IO_WriteB(0x3df,crtcpu);
-			real_writeb(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE,crtcpu);
-		}
-		else INT10_SetActivePage(reg_al);
+		INT10_SetActivePage(reg_al);
 		break;
 	case 0x06:								/* Scroll Up */
 		INT10_ScrollWindow(reg_ch,reg_cl,reg_dh,reg_dl,-reg_al,reg_bh,0xFF);
@@ -140,12 +97,11 @@ static Bitu INT10_Handler(void) {
 	case 0x0F:								/* Get videomode */
 		reg_bh=real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE);
 		reg_al=real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE);
-		if (IS_EGAVGA_ARCH) reg_al|=real_readb(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL)&0x80;
+		reg_al|=real_readb(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL)&0x80;
 		reg_ah=(Bit8u)real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS);
 		break;
 	case 0x10:								/* Palette functions */
-		if (!IS_EGAVGA_ARCH && (reg_al>0x02)) break;
-		else if (!IS_VGA_ARCH && (reg_al>0x03)) break;
+		if (reg_al>0x03) break;
 		switch (reg_al) {
 		case 0x00:							/* SET SINGLE PALETTE REGISTER */
 			INT10_SetSinglePaletteRegister(reg_bl,reg_bh);
@@ -205,8 +161,6 @@ static Bitu INT10_Handler(void) {
 		}
 		break;
 	case 0x11:								/* Character generator functions */
-		if (!IS_EGAVGA_ARCH)
-			break;
 		if ((reg_al&0xf0)==0x10) Mouse_BeforeNewVideoMode(false);
 		switch (reg_al) {
 		/* Textmode calls */
@@ -225,11 +179,9 @@ static Bitu INT10_Handler(void) {
 		case 0x03:			/* Set Block Specifier */
 			IO_Write(0x3c4,0x3);
 			IO_Write(0x3c5,reg_bl);
-			break;
-		case 0x04:			/* Load 8x16 font */
-		case 0x14:
-			if (!IS_VGA_ARCH) break;
-			INT10_LoadFont(Real2Phys(int10.rom.font_16),reg_al==0x14,256,0,reg_bl&0x7f,16);
+			break;			case 0x04:			/* Load 8x16 font */
+			case 0x14:
+				INT10_LoadFont(Real2Phys(int10.rom.font_16),reg_al==0x14,256,0,reg_bl&0x7f,16);
 			break;
 		/* Graphics mode calls */
 		case 0x20:			/* Set User 8x8 Graphics characters */
@@ -246,10 +198,8 @@ static Bitu INT10_Handler(void) {
 		case 0x23:			/* Rom 8x8 double dot set */
 			RealSetVec(0x43,int10.rom.font_8_first);
 			real_writew(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,8);
-			goto graphics_chars;
-		case 0x24:			/* Rom 8x16 set */
-			if (!IS_VGA_ARCH) break;
-			RealSetVec(0x43,int10.rom.font_16);
+			goto graphics_chars;			case 0x24:			/* Rom 8x16 set */
+				RealSetVec(0x43,int10.rom.font_16);
 			real_writew(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,16);
 			goto graphics_chars;
 graphics_chars:
@@ -450,7 +400,7 @@ graphics_chars:
 		}
 		default:
 			LOG(LOG_INT10,LOG_ERROR)("Function 12:Call %2X not handled",reg_bl);
-			if (machine!=MCH_EGA) reg_al=0;
+			reg_al=0;
 			break;
 		}
 		break;
@@ -709,30 +659,10 @@ static void INT10_InitVGA(void) {
 	}
 }
 
-static void SetupTandyBios(void) {
-	static Bit8u TandyConfig[130]= {
-		0x21, 0x42, 0x49, 0x4f, 0x53, 0x20, 0x52, 0x4f, 0x4d, 0x20, 0x76, 0x65, 0x72,
-		0x73, 0x69, 0x6f, 0x6e, 0x20, 0x30, 0x32, 0x2e, 0x30, 0x30, 0x2e, 0x30, 0x30,
-		0x0d, 0x0a, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x74, 0x69, 0x62, 0x69, 0x6c, 0x69,
-		0x74, 0x79, 0x20, 0x53, 0x6f, 0x66, 0x74, 0x77, 0x61, 0x72, 0x65, 0x0d, 0x0a,
-		0x43, 0x6f, 0x70, 0x79, 0x72, 0x69, 0x67, 0x68, 0x74, 0x20, 0x28, 0x43, 0x29,
-		0x20, 0x31, 0x39, 0x38, 0x34, 0x2c, 0x31, 0x39, 0x38, 0x35, 0x2c, 0x31, 0x39,
-		0x38, 0x36, 0x2c, 0x31, 0x39, 0x38, 0x37, 0x0d, 0x0a, 0x50, 0x68, 0x6f, 0x65,
-		0x6e, 0x69, 0x78, 0x20, 0x53, 0x6f, 0x66, 0x74, 0x77, 0x61, 0x72, 0x65, 0x20,
-		0x41, 0x73, 0x73, 0x6f, 0x63, 0x69, 0x61, 0x74, 0x65, 0x73, 0x20, 0x4c, 0x74,
-		0x64, 0x2e, 0x0d, 0x0a, 0x61, 0x6e, 0x64, 0x20, 0x54, 0x61, 0x6e, 0x64, 0x79
-	};
-	if (machine==MCH_TANDY) {
-		Bitu i;
-		for(i=0; i<130; i++) {
-			phys_writeb(0xf0000+i+0xc000, TandyConfig[i]);
-		}
-	}
-}
+
 
 void INT10_Init(Section* /*sec*/) {
 	INT10_InitVGA();
-	if (IS_TANDY_ARCH) SetupTandyBios();
 	/* Setup the INT 10 vector */
 	call_10=CALLBACK_Allocate();
 	CALLBACK_Setup(call_10,&INT10_Handler,CB_IRET,"Int 10 video");

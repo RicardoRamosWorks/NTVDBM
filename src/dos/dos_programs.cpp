@@ -791,8 +791,7 @@ public:
 		bootSector bootarea;
 		imageDiskList[drive-65]->Read_Sector(0,0,1,(Bit8u *)&bootarea);
 		if ((bootarea.rawdata[0]==0x50) && (bootarea.rawdata[1]==0x43) && (bootarea.rawdata[2]==0x6a) && (bootarea.rawdata[3]==0x72)) {
-			if (machine!=MCH_PCJR) WriteOut(MSG_Get("PROGRAM_BOOT_CART_WO_PCJR"));
-			else {
+			WriteOut(MSG_Get("PROGRAM_BOOT_CART_WO_PCJR"));
 				Bit8u rombuf[65536];
 				Bits cfound_at=-1;
 				if (cart_cmd!="") {
@@ -940,7 +939,7 @@ public:
 						CALLBACK_RunRealFar(romseg,cfound_at);
 					}
 				}
-			}
+			
 		} else {
 			disable_umb_ems_xms();
 			void RemoveEMSPageFrame(void);
@@ -949,7 +948,7 @@ public:
 			for(i=0; i<512; i++) real_writeb(0, 0x7c00 + i, bootarea.rawdata[i]);
 
 			/* create appearance of floppy drive DMA usage (Demon's Forge) */
-			if (!IS_TANDY_ARCH && floppysize!=0) GetDMAChannel(2)->tcount=true;
+			if (floppysize!=0) GetDMAChannel(2)->tcount=true;
 
 			/* revector some dos-allocated interrupts */
 			real_writed(0,0x01*4,0xf000ff53);

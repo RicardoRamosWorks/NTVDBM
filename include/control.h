@@ -65,11 +65,12 @@ public:
 	bool initialised;
 	std::vector<std::string> startup_params;
 	std::vector<std::string> configfiles;
-	Config(CommandLine * cmd):cmdline(cmd),secure_mode(false) {
-		startup_params.push_back(cmdline->GetFileName());
-		cmdline->FillVector(startup_params);
-		initialised=false;
-	}
+	Config(CommandLine * cmd):cmdline(cmd),secure_mode(false){}
+	//Config(CommandLine * cmd):cmdline(cmd),secure_mode(false) {
+	//	startup_params.push_back(cmdline->GetFileName());
+	//	cmdline->FillVector(startup_params);
+	//	initialised=false;
+	//}
 	~Config();
 
 	Section_line * AddSection_line(char const * const _name,void (*_initfunction)(Section*));
@@ -88,6 +89,7 @@ public:
 	void ParseEnv(char ** envp);
 	bool SecureMode() const { return secure_mode; }
 	void SwitchToSecureMode() { secure_mode = true; }//can't be undone
+	
 };
 
 #endif

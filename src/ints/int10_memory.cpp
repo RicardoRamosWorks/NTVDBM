@@ -312,9 +312,7 @@ void INT10_SetupRomMemory(void) {
 	INT10_SetupBasicVideoParameterTable();
 	INT10_SetupRomMemoryChecksum();
 
-	if (IS_TANDY_ARCH) {
-		RealSetVec(0x44,RealMake(0xf000,0xfa6e));
-	}
+
 }
 
 void INT10_ReloadRomFonts(void) {

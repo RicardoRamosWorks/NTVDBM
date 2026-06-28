@@ -790,50 +790,9 @@ void VGA_SetupHandlers(void) {
 	vga.svga.bank_write_full = vga.svga.bank_write*vga.svga.bank_size;
 
 	PageHandler *newHandler;
-	switch (machine) {
-	case MCH_CGA:
-	case MCH_PCJR:
-		MEM_SetPageHandler( VGA_PAGE_A0, 16, &vgaph.empty );
-		MEM_SetPageHandler( VGA_PAGE_B0, 8, &vgaph.empty );
-		MEM_SetPageHandler( VGA_PAGE_B8, 8, &vgaph.pcjr );
-		goto range_done;
-	case MCH_HERC:
-		MEM_SetPageHandler( VGA_PAGE_A0, 16, &vgaph.empty );
-		vgapages.base=VGA_PAGE_B0;
-		if (vga.herc.enable_bits & 0x2) {
-			vgapages.mask=0xffff;
-			MEM_SetPageHandler(VGA_PAGE_B0,16,&vgaph.map);
-		} else {
-			vgapages.mask=0x7fff;
-			// With hercules in 32kB mode it leaves a memory hole on 0xb800
-			// and has MDA-compatible address wrapping when graphics are disabled
-			if (vga.herc.enable_bits & 0x1)
-				MEM_SetPageHandler(VGA_PAGE_B0,8,&vgaph.map);
-			else
-				MEM_SetPageHandler(VGA_PAGE_B0,8,&vgaph.herc);
-			MEM_SetPageHandler(VGA_PAGE_B8,8,&vgaph.empty);
-		}
-		goto range_done;
-	case MCH_TANDY:
-		/* Always map 0xa000 - 0xbfff, might overwrite 0xb800 */
-		vgapages.base=VGA_PAGE_A0;
-		vgapages.mask=0x1ffff;
-		MEM_SetPageHandler(VGA_PAGE_A0, 32, &vgaph.map );
-		if ( vga.tandy.extended_ram & 1 ) {
-			//You seem to be able to also map different 64kb banks, but have to figure that out
-			//This seems to work so far though
-			vga.tandy.draw_base = vga.mem.linear;
-			vga.tandy.mem_base = vga.mem.linear;
-		} else {
-			vga.tandy.draw_base = TANDY_VIDBASE( vga.tandy.draw_bank * 16 * 1024);
-			vga.tandy.mem_base = TANDY_VIDBASE( vga.tandy.mem_bank * 16 * 1024);
-			MEM_SetPageHandler( VGA_PAGE_B8, 8, &vgaph.tandy );
-		}
-		goto range_done;
-//		MEM_SetPageHandler(vga.tandy.mem_bank<<2,vga.tandy.is_32k_mode ? 0x08 : 0x04,range_handler);
-	case EGAVGA_ARCH_CASE:
-		break;
-	default:
+	if (machine == MCH_VGA) {
+		/* VGA/EGA - handled below */
+	} else {
 		//LOG_MSG("Illegal machine type %d", machine );
 		return;
 	}
@@ -979,9 +938,5 @@ void VGA_SetupMemory(Section* sec) {
 
 	sec->AddDestroyFunction(&VGA_Memory_ShutDown);
 
-	if (machine==MCH_PCJR) {
-		/* PCJr does not have dedicated graphics memory but uses
-		   conventional memory below 128k */
-		//TODO map?	
-	} 
+	/* PCJr memory setup not applicable */ 
 }

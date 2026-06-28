@@ -776,15 +776,6 @@ again:
 
 
 
-#if 0
-	//Check hidden/deleted directories first. TODO is this really needed. If the directory exist in the overlay things are weird anyway.
-	//the deleted paths are added to the deleted_files list.
-	if (is_deleted_dir(prel)) {
-		//LOG_MSG("skipping early out deleted dir %s",prel);
-		goto again;
-	}
-#endif
-
 	strcat(ovname,prel);
 	bool statok = ( stat(ovname,&stat_block)==0);
 

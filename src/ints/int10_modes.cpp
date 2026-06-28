@@ -405,22 +405,6 @@ void INT10_SetCurMode(void) {
 	if (GCC_UNLIKELY(CurMode->mode!=bios_mode)) {
 		bool mode_changed=false;
 		switch (machine) {
-		case MCH_CGA:
-			if (bios_mode<7) mode_changed=SetCurMode(ModeList_OTHER,bios_mode);
-			break;
-		case TANDY_ARCH_CASE:
-			if (bios_mode!=7 && bios_mode<=0xa) mode_changed=SetCurMode(ModeList_OTHER,bios_mode);
-			break;
-		case MCH_HERC:
-			if (bios_mode<7) mode_changed=SetCurMode(ModeList_OTHER,bios_mode);
-			else if (bios_mode==7) {
-				mode_changed=true;
-				CurMode=&Hercules_Mode;
-			}
-			break;
-		case MCH_EGA:
-			mode_changed=SetCurMode(ModeList_EGA,bios_mode);
-			break;
 		case VGA_ARCH_CASE:
 			switch (svgaCard) {
 			case SVGA_TsengET4K:
@@ -448,16 +432,9 @@ static void FinishSetMode(bool clearmem) {
 	/* Clear video memory if needs be */
 	if (clearmem) {
 		switch (CurMode->type) {
-		case M_TANDY16:
-		case M_CGA4:
-			if ((machine==MCH_PCJR) && (CurMode->mode >= 9)) {
-				// PCJR cannot access the full 32k at 0xb800
-				for (Bit16u ct=0; ct<16*1024; ct++) {
-					// 0x1800 is the last 32k block in 128k, as set in the CRTCPU_PAGE register
-					real_writew(0x1800,ct*2,0x0000);
-				}
-				break;
-			}
+	case M_TANDY16:
+	case M_CGA4:
+	
 		// fall-through
 		case M_CGA2:
 			for (Bit16u ct=0; ct<16*1024; ct++) {
@@ -524,203 +501,6 @@ static void FinishSetMode(bool clearmem) {
 	INT10_SetActivePage(0);
 }
 
-bool INT10_SetVideoMode_OTHER(Bit16u mode,bool clearmem) {
-	switch (machine) {
-	case MCH_CGA:
-		if (mode>6) return false;
-	case TANDY_ARCH_CASE:
-		if (mode>0xa) return false;
-		if (mode==7) mode=0; // PCJR defaults to 0 on illegal mode 7
-		if (!SetCurMode(ModeList_OTHER,mode)) {
-			LOG(LOG_INT10,LOG_ERROR)("Trying to set illegal mode %X",mode);
-			return false;
-		}
-		break;
-	case MCH_HERC:
-		// Allow standard color modes if equipment word is not set to mono (Victory Road)
-		if ((real_readw(BIOSMEM_SEG,BIOSMEM_INITIAL_MODE)&0x30)!=0x30 && mode<7) {
-			SetCurMode(ModeList_OTHER,mode);
-			FinishSetMode(clearmem);
-			return true;
-		}
-		CurMode=&Hercules_Mode;
-		mode=7; // in case the video parameter table is modified
-		break;
-	}
-	LOG(LOG_INT10,LOG_NORMAL)("Set Video Mode %X",mode);
-
-	/* Setup the VGA to the correct mode */
-	//	VGA_SetMode(CurMode->type);
-	/* Setup the CRTC */
-	Bitu crtc_base=machine==MCH_HERC ? 0x3b4 : 0x3d4;
-	//Horizontal total
-	IO_WriteW(crtc_base,0x00 | (CurMode->htotal) << 8);
-	//Horizontal displayed
-	IO_WriteW(crtc_base,0x01 | (CurMode->hdispend) << 8);
-	//Horizontal sync position
-	IO_WriteW(crtc_base,0x02 | (CurMode->hdispend+1) << 8);
-	//Horizontal sync width, seems to be fixed to 0xa, for cga at least, hercules has 0xf
-	IO_WriteW(crtc_base,0x03 | (0xa) << 8);
-	////Vertical total
-	IO_WriteW(crtc_base,0x04 | (CurMode->vtotal) << 8);
-	//Vertical total adjust, 6 for cga,hercules,tandy
-	IO_WriteW(crtc_base,0x05 | (6) << 8);
-	//Vertical displayed
-	IO_WriteW(crtc_base,0x06 | (CurMode->vdispend) << 8);
-	//Vertical sync position
-	IO_WriteW(crtc_base,0x07 | (CurMode->vdispend + ((CurMode->vtotal - CurMode->vdispend)/2)-1) << 8);
-	//Maximum scanline
-	Bit8u scanline,crtpage;
-	scanline=8;
-	switch(CurMode->type) {
-	case M_TEXT:
-		if (machine==MCH_HERC) scanline=14;
-		else scanline=8;
-		break;
-	case M_CGA2:
-		scanline=2;
-		break;
-	case M_CGA4:
-		if (CurMode->mode!=0xa) scanline=2;
-		else scanline=4;
-		break;
-	case M_TANDY16:
-		if (CurMode->mode!=0x9) scanline=2;
-		else scanline=4;
-		break;
-	}
-	IO_WriteW(crtc_base,0x09 | (scanline-1) << 8);
-	//Setup the CGA palette using VGA DAC palette
-	for (Bit8u ct=0; ct<16; ct++) VGA_DAC_SetEntry(ct,cga_palette[ct][0],cga_palette[ct][1],cga_palette[ct][2]);
-	//Setup the tandy palette
-	for (Bit8u ct=0; ct<16; ct++) VGA_DAC_CombineColor(ct,ct);
-	//Setup the special registers for each machine type
-	Bit8u mode_control_list[0xa+1]= {
-		0x2c,0x28,0x2d,0x29,	//0-3
-		0x2a,0x2e,0x1e,0x29,	//4-7
-		0x2a,0x2b,0x3b			//8-a
-	};
-	Bit8u mode_control_list_pcjr[0xa+1]= {
-		0x0c,0x08,0x0d,0x09,	//0-3
-		0x0a,0x0e,0x0e,0x09,	//4-7
-		0x1a,0x1b,0x0b			//8-a
-	};
-	Bit8u mode_control,color_select;
-	switch (machine) {
-	case MCH_HERC:
-		IO_WriteB(0x3b8,0x28);	// TEXT mode and blinking characters
-
-		Herc_Palette();
-		VGA_DAC_CombineColor(0,0);
-		VGA_DAC_CombineColor(1,7);
-
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x29); // attribute controls blinking
-		break;
-	case MCH_CGA:
-		mode_control=mode_control_list[CurMode->mode];
-		if (CurMode->mode == 0x6) color_select=0x3f;
-		else color_select=0x30;
-		IO_WriteB(0x3d8,mode_control);
-		IO_WriteB(0x3d9,color_select);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,mode_control);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,color_select);
-		break;
-	case MCH_TANDY:
-		/* Init some registers */
-		IO_WriteB(0x3da,0x1);
-		IO_WriteB(0x3de,0xf);		//Palette mask always 0xf
-		IO_WriteB(0x3da,0x2);
-		IO_WriteB(0x3de,0x0);		//black border
-		IO_WriteB(0x3da,0x3);							//Tandy color overrides?
-		switch (CurMode->mode) {
-		case 0x8:
-			IO_WriteB(0x3de,0x14);
-			break;
-		case 0x9:
-			IO_WriteB(0x3de,0x14);
-			break;
-		case 0xa:
-			IO_WriteB(0x3de,0x0c);
-			break;
-		default:
-			IO_WriteB(0x3de,0x0);
-			break;
-		}
-		// write palette
-		for(Bitu i = 0; i < 16; i++) {
-			IO_WriteB(0x3da,i+0x10);
-			IO_WriteB(0x3de,i);
-		}
-		//Clear extended mapping
-		IO_WriteB(0x3da,0x5);
-		IO_WriteB(0x3de,0x0);
-		//Clear monitor mode
-		IO_WriteB(0x3da,0x8);
-		IO_WriteB(0x3de,0x0);
-		crtpage=(CurMode->mode>=0x9) ? 0xf6 : 0x3f;
-		IO_WriteB(0x3df,crtpage);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CRTCPU_PAGE,crtpage);
-		mode_control=mode_control_list[CurMode->mode];
-		if (CurMode->mode == 0x6 || CurMode->mode==0xa) color_select=0x3f;
-		else color_select=0x30;
-		IO_WriteB(0x3d8,mode_control);
-		IO_WriteB(0x3d9,color_select);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,mode_control);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,color_select);
-		break;
-	case MCH_PCJR:
-		/* Init some registers */
-		IO_ReadB(0x3da);
-		IO_WriteB(0x3da,0x1);
-		IO_WriteB(0x3da,0xf);		//Palette mask always 0xf
-		IO_WriteB(0x3da,0x2);
-		IO_WriteB(0x3da,0x0);		//black border
-		IO_WriteB(0x3da,0x3);
-		if (CurMode->mode<=0x04) IO_WriteB(0x3da,0x02);
-		else if (CurMode->mode==0x06) IO_WriteB(0x3da,0x08);
-		else IO_WriteB(0x3da,0x00);
-
-		/* set CRT/Processor page register */
-		if (CurMode->mode<0x04) crtpage=0x3f;
-		else if (CurMode->mode>=0x09) crtpage=0xf6;
-		else crtpage=0x7f;
-		IO_WriteB(0x3df,crtpage);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CRTCPU_PAGE,crtpage);
-
-		mode_control=mode_control_list_pcjr[CurMode->mode];
-		IO_WriteB(0x3da,0x0);
-		IO_WriteB(0x3da,mode_control);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,mode_control);
-
-		if (CurMode->mode == 0x6 || CurMode->mode==0xa) color_select=0x3f;
-		else color_select=0x30;
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,color_select);
-		INT10_SetColorSelect(1);
-		INT10_SetBackgroundBorder(0);
-		break;
-	}
-
-	RealPt vparams = RealGetVec(0x1d);
-	if ((vparams != RealMake(0xf000,0xf0a4)) && (mode < 8)) {
-		// load crtc parameters from video params table
-		Bit16u crtc_block_index = 0;
-		if (mode < 2) crtc_block_index = 0;
-		else if (mode < 4) crtc_block_index = 1;
-		else if (mode < 7) crtc_block_index = 2;
-		else if (mode == 7) crtc_block_index = 3; // MDA mono mode; invalid for others
-		else if (mode < 9) crtc_block_index = 2;
-		else crtc_block_index = 3; // Tandy/PCjr modes
-
-		// init CRTC registers
-		for (Bit16u i = 0; i < 16; i++)
-			IO_WriteW(crtc_base, i | (real_readb(RealSeg(vparams),
-			                                     RealOff(vparams) + i + crtc_block_index*16) << 8));
-	}
-	FinishSetMode(clearmem);
-	return true;
-}
-
-
 bool INT10_SetVideoMode(Bit16u mode) {
 	bool clearmem=true;
 	Bitu i;
@@ -735,8 +515,6 @@ bool INT10_SetVideoMode(Bit16u mode) {
 	}
 	int10.vesa_setmode=0xffff;
 	LOG(LOG_INT10,LOG_NORMAL)("Set Video Mode %X",mode);
-	if (!IS_EGAVGA_ARCH) return INT10_SetVideoMode_OTHER(mode,clearmem);
-
 	/* First read mode setup settings from bios area */
 	//	Bit8u video_ctl=real_readb(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL);
 	//	Bit8u vga_switches=real_readb(BIOSMEM_SEG,BIOSMEM_SWITCHES);
@@ -791,13 +569,8 @@ bool INT10_SetVideoMode(Bit16u mode) {
 	/* Setup MISC Output Register */
 	Bit8u misc_output=0x2 | (mono_mode ? 0x0 : 0x1);
 
-	if (machine==MCH_EGA) {
-		// 16MHz clock for 350-line EGA modes except mode F
-		if ((CurMode->vdispend==350) && (mode!=0xf)) misc_output|=0x4;
-	} else {
-		// 28MHz clock for 9-pixel wide chars
-		if ((CurMode->type==M_TEXT) && (CurMode->cwidth==9)) misc_output|=0x4;
-	}
+	// 28MHz clock for 9-pixel wide chars
+	if ((CurMode->type==M_TEXT) && (CurMode->cwidth==9)) misc_output|=0x4;
 
 	switch (CurMode->vdispend) {
 	case 400:
@@ -819,7 +592,6 @@ bool INT10_SetVideoMode(Bit16u mode) {
 	memset(seq_data,0,SEQ_REGS);
 	seq_data[1]|=0x01;	//8 dot fonts by default
 	if (CurMode->special & _EGA_HALF_CLOCK) seq_data[1]|=0x08; //Check for half clock
-	if ((machine==MCH_EGA) && (CurMode->special & _EGA_HALF_CLOCK)) seq_data[1]|=0x02;
 	seq_data[4]|=0x02;	//More than 64kb
 	switch (CurMode->type) {
 	case M_TEXT:
@@ -830,15 +602,15 @@ bool INT10_SetVideoMode(Bit16u mode) {
 		break;
 	case M_CGA2:
 		seq_data[2]|=0xf;				//Enable plane 0
-		if (machine==MCH_EGA) seq_data[4]|=0x04;		//odd/even enabled
+		seq_data[4]|=0x04;				//odd/even enabled
 		break;
 	case M_CGA4:
-		if (machine==MCH_EGA) seq_data[2]|=0x03;		//Enable plane 0 and 1
+		seq_data[2]|=0x03;				//Enable plane 0 and 1
 		break;
 	case M_LIN4:
 	case M_EGA:
 		seq_data[2]|=0xf;				//Enable all planes for writing
-		if (machine==MCH_EGA) seq_data[4]|=0x04;		//odd/even enabled
+		seq_data[4]|=0x04;				//odd/even enabled
 		break;
 	case M_LIN8:						//Seems to have the same reg layout from testing
 	case M_LIN15:
@@ -1002,7 +774,7 @@ bool INT10_SetVideoMode(Bit16u mode) {
 	Bit8u underline=0;
 	/* Maximum scanline / Underline Location */
 	if (CurMode->special & _EGA_LINE_DOUBLE) {
-		if (machine!=MCH_EGA) max_scanline|=0x80;
+		max_scanline|=0x80;
 	}
 	switch (CurMode->type) {
 	case M_TEXT:
@@ -1093,12 +865,7 @@ bool INT10_SetVideoMode(Bit16u mode) {
 		if (CurMode->mode==0x11) // 0x11 also sets address wrap.  thought maybe all 2 color modes did but 0x0f doesn't.
 			mode_control=0xc3; // so.. 0x11 or 0x0f a one off?
 		else {
-			if (machine==MCH_EGA) {
-				if (CurMode->special & _EGA_LINE_DOUBLE) mode_control=0xc3;
-				else mode_control=0x8b;
-			} else {
 				mode_control=0xe3;
-			}
 		}
 		break;
 	case M_TEXT:
@@ -1180,14 +947,10 @@ bool INT10_SetVideoMode(Bit16u mode) {
 	case M_CGA4:
 		gfx_data[0x5]|=0x20;		//CGA mode
 		gfx_data[0x6]|=0x0f;		//graphics mode at at 0xb800=0xbfff
-		if (machine==MCH_EGA) gfx_data[0x5]|=0x10;
+		gfx_data[0x5]|=0x10;
 		break;
 	case M_CGA2:
-		if (machine==MCH_EGA) {
-			gfx_data[0x6]|=0x0d;		//graphics mode at at 0xb800=0xbfff
-		} else {
-			gfx_data[0x6]|=0x0f;		//graphics mode at at 0xb800=0xbfff
-		}
+		gfx_data[0x6]|=0x0d;		//graphics mode at at 0xb800=0xbfff
 		break;
 	}
 	for (Bit8u ct=0; ct<GFX_REGS; ct++) {

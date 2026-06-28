@@ -16,7 +16,7 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-enum STRING_OP {
+enum STRING_OP_NORMAL {
 	R_OUTSB,R_OUTSW,R_OUTSD,
 	R_INSB,R_INSW,R_INSD,
 	R_MOVSB,R_MOVSW,R_MOVSD,
@@ -28,7 +28,7 @@ enum STRING_OP {
 
 #define LoadD(_BLAH) _BLAH
 
-static void DoString(STRING_OP type) {
+static void DoString(STRING_OP_NORMAL type) {
 	PhysPt  si_base,di_base;
 	Bitu	si_index,di_index;
 	Bitu	add_mask;

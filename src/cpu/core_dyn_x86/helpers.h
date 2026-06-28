@@ -128,44 +128,4 @@ static bool dyn_helper_idivd(Bit32s val) {
 	return false;
 }
 
-/*
- * Versões alternativas com early-out para casos comuns
- * (se o perfil de uso mostrar muitos divisores pequenos)
- */
-#if 0  /* Descomente se necessário após profiling */
 
-static bool dyn_helper_divd_fast(Bit32u val) {
-	if (val == 0) return CPU_PrepareException(0, 0);
-
-	/*
-	 * Divisão 64-bit por 32-bit no Pentium M
-	 * Caso comum: reg_edx < val -> quo cabe em 32 bits garantido
-	 * Isso evita a divisão 64-bit completa em muitos casos
-	 */
-	if (reg_edx < val) {
-		/*
-		 * Podemos fazer divisão 32-bit:
-		 * quo = reg_eax / val (parte baixa)
-		 * rem = reg_eax % val
-		 * Mas precisamos do quociente completo...
-		 * Na verdade isso só funciona se reg_edx == 0
-		 */
-		if (reg_edx == 0) {
-			reg_eax = reg_eax / val;
-			reg_edx = reg_eax % val;
-			return false;
-		}
-	}
-
-	/* Fallback para divisão 64-bit completa */
-	Bit64u num = ((Bit64u)reg_edx << 32) | reg_eax;
-	Bit64u quo = num / val;
-
-	if (quo > 0xFFFFFFFFULL) return CPU_PrepareException(0, 0);
-
-	reg_edx = (Bit32u)(num % val);
-	reg_eax = (Bit32u)quo;
-	return false;
-}
-
-#endif /* 0 */

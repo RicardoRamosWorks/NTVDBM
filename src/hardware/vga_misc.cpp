@@ -60,10 +60,8 @@ static void write_p3c2(Bitu /*port*/,Bitu val,Bitu /*iolen*/) {
 
 	Bitu base=(val & 0x1) ? 0x3d0 : 0x3b0;
 	Bitu free=(val & 0x1) ? 0x3b0 : 0x3d0;
-	Bitu first=2, last=2;
-	if (machine==MCH_EGA) {first=0; last=3;}
 
-	for (Bitu i=first; i<=last; i++) {
+	for (Bitu i=2; i<=2; i++) {
 		IO_RegisterWriteHandler(base+i*2,vga_write_p3d4,IO_MB);
 		IO_RegisterReadHandler(base+i*2,vga_read_p3d4,IO_MB);
 		IO_RegisterWriteHandler(base+i*2+1,vga_write_p3d5,IO_MB);
@@ -107,8 +105,7 @@ static Bitu read_p3c8(Bitu /*port*/,Bitu /*iolen*/) {
 static Bitu read_p3c2(Bitu /*port*/,Bitu /*iolen*/) {
 	Bit8u retval=0;
 
-	if (machine==MCH_EGA) retval = 0x0F;
-	else if (IS_VGA_ARCH) retval = 0x60;
+	if (IS_VGA_ARCH) retval = 0x60;
 	if ((machine==MCH_VGA) || (((vga.misc_output>>2)&3)==0) || (((vga.misc_output>>2)&3)==3)) {
 		retval |= 0x10;
 	}
@@ -140,7 +137,5 @@ void VGA_SetupMisc(void) {
 		} else {
 			IO_RegisterReadHandler(0x3c8,read_p3c8,IO_MB);
 		}
-	} else if (machine==MCH_CGA || IS_TANDY_ARCH) {
-		IO_RegisterReadHandler(0x3da,vga_read_p3da,IO_MB);
 	}
 }

@@ -49,8 +49,7 @@ static void write_crtc_data_other(Bitu /*port*/,Bitu val,Bitu /*iolen*/) {
 		vga.other.hsyncp=(Bit8u)val;
 		break;
 	case 0x03:		//Horizontal sync width
-		if (machine==MCH_TANDY) vga.other.vsyncw=(Bit8u)(val >> 4);
-		else vga.other.vsyncw = 16; // The MC6845 has a fixed v-sync width of 16 lines
+		vga.other.vsyncw = 16; // The MC6845 has a fixed v-sync width of 16 lines
 		vga.other.hsyncw=(Bit8u)(val & 0xf);
 		break;
 	case 0x04:		//Vertical total
@@ -119,9 +118,7 @@ static Bitu read_crtc_data_other(Bitu /*port*/,Bitu /*iolen*/) {
 	case 0x02:		//Horizontal sync position
 		return vga.other.hsyncp;
 	case 0x03:		//Horizontal and vertical sync width
-		if (machine==MCH_TANDY)
-			return vga.other.hsyncw | (vga.other.vsyncw << 4);
-		else return vga.other.hsyncw;
+		return vga.other.hsyncw;
 	case 0x04:		//Vertical total
 		return vga.other.vtotal;
 	case 0x05:		//Vertical display adjust
@@ -435,98 +432,17 @@ static void Composite(bool pressed) {
 }
 
 static void tandy_update_palette() {
-	// TODO mask off bits if needed
-	if (machine == MCH_TANDY) {
-		switch (vga.mode) {
-		case M_TANDY2:
-			VGA_SetCGA2Table(vga.attr.palette[0],
-				vga.attr.palette[vga.tandy.color_select&0xf]);
-			break;
-		case M_TANDY4:
-			if (vga.tandy.gfx_control & 0x8) {
-				// 4-color high resolution - might be an idea to introduce M_TANDY4H
-				VGA_SetCGA4Table( // function sets both medium and highres 4color tables
-					vga.attr.palette[0], vga.attr.palette[1],
-					vga.attr.palette[2], vga.attr.palette[3]);
-			} else {
-				Bit8u color_set = 0;
-				Bit8u r_mask = 0xf;
-				if (vga.tandy.color_select & 0x10) color_set |= 8; // intensity
-				if (vga.tandy.color_select & 0x20) color_set |= 1; // Cyan Mag. White
-				if (vga.tandy.mode_control & 0x04) {			// Cyan Red White
-					color_set |= 1;
-					r_mask &= ~1;
-				}
-				VGA_SetCGA4Table(
-					vga.attr.palette[vga.tandy.color_select&0xf],
-					vga.attr.palette[(2|color_set)& vga.tandy.palette_mask],
-					vga.attr.palette[(4|(color_set& r_mask))& vga.tandy.palette_mask],
-					vga.attr.palette[(6|color_set)& vga.tandy.palette_mask]);
-			}
-			break;
-		default:
-			break;
-		}
-	} else {
-		// PCJr
-		switch (vga.mode) {
-		case M_TANDY2:
-			VGA_SetCGA2Table(vga.attr.palette[0],vga.attr.palette[1]);
-			break;
-		case M_TANDY4:
-			VGA_SetCGA4Table(
-				vga.attr.palette[0], vga.attr.palette[1],
-				vga.attr.palette[2], vga.attr.palette[3]);
-			break;
-		default:
-			break;
-		}
-	}
+	// Not used on VGA architecture
 }
 
 void VGA_SetModeNow(VGAModes mode);
 
 static void TANDY_FindMode(void) {
-	if (vga.tandy.mode_control & 0x2) {
-		if (vga.tandy.gfx_control & 0x10) {
-			if (vga.mode==M_TANDY4) {
-				VGA_SetModeNow(M_TANDY16);
-			} else VGA_SetMode(M_TANDY16);
-		}
-		else if (vga.tandy.gfx_control & 0x08) {
-			VGA_SetMode(M_TANDY4);
-		}
-		else if (vga.tandy.mode_control & 0x10)
-			VGA_SetMode(M_TANDY2);
-		else {
-			if (vga.mode==M_TANDY16) {
-				VGA_SetModeNow(M_TANDY4);
-			} else VGA_SetMode(M_TANDY4);
-		}
-		tandy_update_palette();
-	} else {
-		VGA_SetMode(M_TANDY_TEXT);
-	}
+	// Not used on VGA architecture
 }
 
 static void PCJr_FindMode(void) {
-	if (vga.tandy.mode_control & 0x2) {
-		if (vga.tandy.mode_control & 0x10) {
-			/* bit4 of mode control 1 signals 16 colour graphics mode */
-			if (vga.mode==M_TANDY4) VGA_SetModeNow(M_TANDY16); // TODO lowres mode only
-			else VGA_SetMode(M_TANDY16);
-		} else if (vga.tandy.gfx_control & 0x08) {
-			/* bit3 of mode control 2 signals 2 colour graphics mode */
-			VGA_SetMode(M_TANDY2);
-		} else {
-			/* otherwise some 4-colour graphics mode */
-			if (vga.mode==M_TANDY16) VGA_SetModeNow(M_TANDY4);
-			else VGA_SetMode(M_TANDY4);
-		}
-		tandy_update_palette();
-	} else {
-		VGA_SetMode(M_TANDY_TEXT);
-	}
+	// Not used on VGA architecture
 }
 
 static void TandyCheckLineMask(void ) {
@@ -547,15 +463,7 @@ static void TandyCheckLineMask(void ) {
 static void write_tandy_reg(Bit8u val) {
 	switch (vga.tandy.reg_index) {
 	case 0x0:
-		if (machine==MCH_PCJR) {
-			vga.tandy.mode_control=val;
-			VGA_SetBlinking(val & 0x20);
-			PCJr_FindMode();
-			if (val&0x8) vga.attr.disabled &= ~1;
-			else vga.attr.disabled |= 1;
-		} else {
-			LOG(LOG_VGAMISC,LOG_NORMAL)("Unhandled Write %2X to tandy reg %X",val,vga.tandy.reg_index);
-		}
+		LOG(LOG_VGAMISC,LOG_NORMAL)("Unhandled Write %2X to tandy reg %X",val,vga.tandy.reg_index);
 		break;
 	case 0x1:	/* Palette mask */
 		vga.tandy.palette_mask = val;
@@ -566,8 +474,6 @@ static void write_tandy_reg(Bit8u val) {
 		break;
 	case 0x3:	/* More control */
 		vga.tandy.gfx_control=val;
-		if (machine==MCH_TANDY) TANDY_FindMode();
-		else PCJr_FindMode();
 		break;
 	case 0x5:	/* Extended ram page register */
 		// Bit 0 enables extended ram
@@ -794,74 +700,12 @@ void VGA_SetupOther(void) {
 	vga.attr.disabled = 0;
 	vga.config.bytes_skip=0;
 
-	//Initialize values common for most machines, can be overwritten
+	//Initialize values
 	vga.tandy.draw_base = vga.mem.linear;
 	vga.tandy.mem_base = vga.mem.linear;
 	vga.tandy.addr_mask = 8*1024 - 1;
 	vga.tandy.line_mask = 3;
 	vga.tandy.line_shift = 13;
 
-	if (machine==MCH_CGA || IS_TANDY_ARCH) {
-		extern Bit8u int10_font_08[256 * 8];
-		for (i=0;i<256;i++)	memcpy(&vga.draw.font[i*32],&int10_font_08[i*8],8);
-		vga.draw.font_tables[0]=vga.draw.font_tables[1]=vga.draw.font;
-	}
-	if (machine==MCH_CGA || IS_TANDY_ARCH || machine==MCH_HERC) {
-		IO_RegisterWriteHandler(0x3db,write_lightpen,IO_MB);
-		IO_RegisterWriteHandler(0x3dc,write_lightpen,IO_MB);
-	}
-	if (machine==MCH_HERC) {
-		extern Bit8u int10_font_14[256 * 14];
-		for (i=0;i<256;i++)	memcpy(&vga.draw.font[i*32],&int10_font_14[i*14],14);
-		vga.draw.font_tables[0]=vga.draw.font_tables[1]=vga.draw.font;
-		MAPPER_AddHandler(CycleHercPal,MK_f11,0,"hercpal","Herc Pal");
-	}
-	if (machine==MCH_CGA) {
-		IO_RegisterWriteHandler(0x3d8,write_cga,IO_MB);
-		IO_RegisterWriteHandler(0x3d9,write_cga,IO_MB);
-		MAPPER_AddHandler(IncreaseHue,MK_f11,MMOD2,"inchue","Inc Hue");
-		MAPPER_AddHandler(DecreaseHue,MK_f11,0,"dechue","Dec Hue");
-		MAPPER_AddHandler(CGAModel,MK_f11,MMOD1|MMOD2,"cgamodel","CGA Model");
-		MAPPER_AddHandler(Composite,MK_f12,0,"cgacomp","CGA Comp");
-	}
-	if (machine==MCH_TANDY) {
-		write_tandy( 0x3df, 0x0, 0 );
-		IO_RegisterWriteHandler(0x3d8,write_tandy,IO_MB);
-		IO_RegisterWriteHandler(0x3d9,write_tandy,IO_MB);
-		IO_RegisterWriteHandler(0x3da,write_tandy,IO_MB);
-		IO_RegisterWriteHandler(0x3de,write_tandy,IO_MB);
-		IO_RegisterWriteHandler(0x3df,write_tandy,IO_MB);
-	}
-	if (machine==MCH_PCJR) {
-		//write_pcjr will setup base address
-		write_pcjr( 0x3df, 0x7 | (0x7 << 3), 0 );
-		IO_RegisterWriteHandler(0x3da,write_pcjr,IO_MB);
-		IO_RegisterWriteHandler(0x3df,write_pcjr,IO_MB);
-	}
-	if (machine==MCH_HERC) {
-		Bitu base=0x3b0;
-		for (Bitu i = 0; i < 4; i++) {
-			// The registers are repeated as the address is not decoded properly;
-			// The official ports are 3b4, 3b5
-			IO_RegisterWriteHandler(base+i*2,write_crtc_index_other,IO_MB);
-			IO_RegisterWriteHandler(base+i*2+1,write_crtc_data_other,IO_MB);
-			IO_RegisterReadHandler(base+i*2,read_crtc_index_other,IO_MB);
-			IO_RegisterReadHandler(base+i*2+1,read_crtc_data_other,IO_MB);
-		}
-		vga.herc.enable_bits=0;
-		vga.herc.mode_control=0xa; // first mode written will be text mode
-		vga.crtc.underline_location = 13;
-		IO_RegisterWriteHandler(0x3b8,write_hercules,IO_MB);
-		IO_RegisterWriteHandler(0x3bf,write_hercules,IO_MB);
-		IO_RegisterReadHandler(0x3ba,read_herc_status,IO_MB);
-	} else if (!IS_EGAVGA_ARCH) {
-		Bitu base=0x3d0;
-		for (Bitu port_ct=0; port_ct<4; port_ct++) {
-			IO_RegisterWriteHandler(base+port_ct*2,write_crtc_index_other,IO_MB);
-			IO_RegisterWriteHandler(base+port_ct*2+1,write_crtc_data_other,IO_MB);
-			IO_RegisterReadHandler(base+port_ct*2,read_crtc_index_other,IO_MB);
-			IO_RegisterReadHandler(base+port_ct*2+1,read_crtc_data_other,IO_MB);
-		}
-	}
-
+	// VGA architecture: no CGA/Tandy/PCJr/Hercules initialization needed
 }

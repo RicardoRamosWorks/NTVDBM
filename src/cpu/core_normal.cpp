@@ -139,6 +139,10 @@ static INLINE Bit32u Fetchd() {
 #define EALookupTable (core.ea_table)
 
 Bits CPU_Core_Normal_Run(void) {
+	/* Early exit: avoid unnecessary work when no cycles left */
+	if (CPU_Cycles <= 0)
+		return CBRET_NONE;
+
 	while (CPU_Cycles-->0) {
 		LOADIP;
 		core.opcode_index=cpu.code.big*0x200;

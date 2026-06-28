@@ -38,6 +38,11 @@
 #include "render_scalers.h"
 #include "render_glsl.h"
 
+#if defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+#include <xmmintrin.h>
+#include <emmintrin.h>
+#endif
+
 Render_t render;
 ScalerLineHandler_t RENDER_DrawLine;
 
@@ -46,6 +51,33 @@ static Bitu cached_width;
 static Bitu cached_height;
 static Bitu cached_bpp;
 static bool cache_initialized = false;
+
+// Alocação dinâmica do buffer de cache do scaler
+static Bit8u* scaler_dynamic_cache = NULL;
+static Bitu scaler_dynamic_cache_size = 0;
+
+static bool scaler_cache_alloc(Bitu pitch, Bitu height) {
+	Bitu needed = pitch * (height + 16) + 4096;
+	if (scaler_dynamic_cache && scaler_dynamic_cache_size >= needed)
+		return true;
+	if (scaler_dynamic_cache)
+		free(scaler_dynamic_cache);
+	scaler_dynamic_cache = (Bit8u*)malloc(needed);
+	if (scaler_dynamic_cache) {
+		scaler_dynamic_cache_size = needed;
+		return true;
+	}
+	scaler_dynamic_cache_size = 0;
+	return false;
+}
+
+static void scaler_cache_free(void) {
+	if (scaler_dynamic_cache) {
+		free(scaler_dynamic_cache);
+		scaler_dynamic_cache = NULL;
+	}
+	scaler_dynamic_cache_size = 0;
+}
 
 static void RENDER_CallBack( GFX_CallBackFunctions_t function );
 
@@ -111,32 +143,49 @@ static void RENDER_EmptyLineHandler(const void * src) {
 	// Não faz nada - otimizado
 }
 
-// Otimização: comparação de cache inline para reduzir chamadas de função
+// SSE2/AVX2: detecção otimizada de cache hit usando instruções SIMD
+#if defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+static bool sse2_available = true;
+#else
+static bool sse2_available = false;
+#endif
+
+static inline bool render_cache_hit_simd(const Bitu *src, Bitu *cache, Bits count) {
+#if defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+	if (sse2_available) {
+		const Bitu simd_inc = 16 / sizeof(Bitu);
+		while (count >= (Bits)simd_inc) {
+			__m128i v = _mm_loadu_si128((const __m128i*)src);
+			__m128i c = _mm_loadu_si128((const __m128i*)cache);
+			__m128i cmp = _mm_cmpeq_epi32(v, c);
+			if (_mm_movemask_epi8(cmp) != 0xFFFF)
+				return false;
+			count -= (Bits)simd_inc;
+			src += simd_inc;
+			cache += simd_inc;
+		}
+	}
+#endif
+	// Elementos restantes (não alinhados ao SIMD ou sem SSE)
+	while (count > 0) {
+		if (src[0] != cache[0])
+			return false;
+		count--;
+		src++;
+		cache++;
+	}
+	return true;
+}
+
+// Otimização: comparação de cache com SSE2 inline
 static void RENDER_StartLineHandler(const void * s) {
 	if (s) {
 		const Bitu *src = (Bitu*)s;
 		Bitu *cache = (Bitu*)(render.scale.cacheRead);
 		Bits x = render.src.start;
 
-		// Loop otimizado: compara 2 elementos por iteração
-		while (x > 1) {
-			if (src[0] != cache[0] || src[1] != cache[1]) {
-				if (!GFX_StartUpdate(render.scale.outWrite, render.scale.outPitch)) {
-					RENDER_DrawLine = RENDER_EmptyLineHandler;
-					return;
-				}
-				render.scale.outWrite += render.scale.outPitch * Scaler_ChangedLines[0];
-				RENDER_DrawLine = render.scale.lineHandler;
-				RENDER_DrawLine(s);
-				return;
-			}
-			x -= 2;
-			src += 2;
-			cache += 2;
-		}
-
-		// Elemento restante
-		if (x > 0 && src[0] != cache[0]) {
+		// Usa SIMD para detecção rápida de cache hit
+		if (!render_cache_hit_simd(src, cache, x)) {
 			if (!GFX_StartUpdate(render.scale.outWrite, render.scale.outPitch)) {
 				RENDER_DrawLine = RENDER_EmptyLineHandler;
 				return;
@@ -216,7 +265,14 @@ bool RENDER_StartUpdate(void) {
 
 	render.scale.inLine = 0;
 	render.scale.outLine = 0;
-	render.scale.cacheRead = (Bit8u*)&scalerSourceCache;
+
+	// Usa buffer dinâmico se disponível, caso contrário usa o scalerSourceCache
+	if (scaler_dynamic_cache) {
+		render.scale.cacheRead = scaler_dynamic_cache;
+	} else {
+		render.scale.cacheRead = scalerSourceCache;
+	}
+
 	render.scale.outWrite = 0;
 	render.scale.outPitch = 0;
 	Scaler_ChangedLines[0] = 0;
@@ -238,7 +294,7 @@ bool RENDER_StartUpdate(void) {
 			render.fullFrame = true;
 		} else {
 			RENDER_DrawLine = RENDER_StartLineHandler;
-			render.fullFrame = (CaptureState & (CAPTURE_IMAGE|CAPTURE_VIDEO)) ? true : false;
+			render.fullFrame = false;
 		}
 	}
 
@@ -251,6 +307,12 @@ static void RENDER_Halt(void) {
 	GFX_EndUpdate(0);
 	render.updating = false;
 	render.active = false;
+
+	/* Liberar buffers alocados dinamicamente */
+	scaler_cache_free();
+	scalerSourceCacheFree();
+	scalerWriteCacheFree();
+	Scaler_AspectChangedLinesFree();
 }
 
 extern Bitu PIC_Ticks;
@@ -260,24 +322,6 @@ void RENDER_EndUpdate(bool abort) {
 		return;
 
 	RENDER_DrawLine = RENDER_EmptyLineHandler;
-
-	if (CaptureState & (CAPTURE_IMAGE|CAPTURE_VIDEO)) {
-		Bitu pitch, flags = 0;
-
-		if (render.src.dblw != render.src.dblh) {
-			if (render.src.dblw) flags |= CAPTURE_FLAG_DBLW;
-			if (render.src.dblh) flags |= CAPTURE_FLAG_DBLH;
-		}
-		if (render.scale.outWrite == NULL) flags |= CAPTURE_FLAG_DUPLICATE;
-
-		float fps = render.src.fps;
-		pitch = render.scale.cachePitch;
-		if (render.frameskip.max)
-			fps /= 1 + render.frameskip.max;
-
-		CAPTURE_AddImage(render.src.width, render.src.height, render.src.bpp, pitch,
-		                 flags, fps, (Bit8u *)&scalerSourceCache, (Bit8u*)&render.pal.rgb);
-	}
 
 	if (render.scale.outWrite) {
 		GFX_EndUpdate(abort ? NULL : Scaler_ChangedLines);
@@ -290,10 +334,6 @@ void RENDER_EndUpdate(bool abort) {
 	render.frameskip.index = (render.frameskip.index + 1) & (RENDER_SKIP_CACHE - 1);
 	render.updating = false;
 }
-
-// Otimização: lookup table para cálculos de aspecto
-static Bitu aspect_lookup[1024];
-static bool aspect_table_initialized = false;
 
 static Bitu MakeAspectTable(Bitu skip, Bitu height, double scaley, Bitu miny) {
 	Bitu i;
@@ -431,6 +471,12 @@ forcenormal:
 			goto forcenormal;
 	}
 
+	// Alocação dinâmica dos buffers do scaler (PRECISA ser antes de MakeAspectTable!)
+	Bitu src_height = render.src.height;
+	if (src_height > 0) {
+		Scaler_AspectChangedLinesAlloc(src_height);
+	}
+
 	width *= xscale;
 	Bitu skip = complexBlock ? 1 : 0;
 
@@ -520,6 +566,21 @@ forcenormal:
 		E_Exit("RENDER:Wrong source bpp %d", render.src.bpp);
 	}
 
+	if (render.scale.outPitch > 0) {
+		scalerWriteCacheAlloc(render.scale.outPitch);
+	}
+
+	// Alocação dinâmica do buffer de cache do scaler
+	Bitu cache_pitch = render.scale.cachePitch;
+	if (cache_pitch > 0 && src_height > 0) {
+		Bitu cache_size = cache_pitch * (src_height + 16);
+		scalerSourceCacheAlloc(cache_size);
+
+		if (!scaler_cache_alloc(cache_pitch, src_height)) {
+			LOG(LOG_MISC,LOG_WARN)("Falha ao alocar buffer de cache dinâmico, usando estático");
+		}
+	}
+
 	render.scale.blocks = render.src.width / SCALER_BLOCKSIZE;
 	render.scale.lastBlock = render.src.width % SCALER_BLOCKSIZE;
 	render.scale.inHeight = render.src.height;
@@ -536,7 +597,7 @@ forcenormal:
 	render.scale.clearCache = true;
 	render.active = true;
 
-	// Atualizar cache
+	// Atualizar cache local
 	cached_width = width;
 	cached_height = height;
 	cached_bpp = render.src.bpp;

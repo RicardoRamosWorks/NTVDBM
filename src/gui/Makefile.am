@@ -5,5 +5,5 @@ libgui_a_SOURCES = sdlmain.cpp sdl_mapper.cpp dosbox_logo.h \
 	render.cpp render_scalers.cpp render_scalers.h \
 	render_templates.h render_loops.h render_simple.h \
 	midi.cpp midi_win32.h \
-	sdl_gui.cpp dosbox_splash.h
+	dosbox_splash.h
 

@@ -308,15 +308,6 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 		if (iscom) {
 			minsize=0x1000;
 			maxsize=0xffff;
-			if (machine==MCH_PCJR) {
-				/* try to load file into memory below 96k */
-				pos=0;
-				DOS_SeekFile(fhandle,&pos,DOS_SEEK_SET);
-				Bit16u dataread=0x1800;
-				DOS_ReadFile(fhandle,loadbuf,&dataread);
-				if (dataread<0x1800) maxsize=((dataread+0x10)>>4)+0x20;
-				if (minsize>maxsize) minsize=maxsize;
-			}
 		} else {	/* Exe size calculated from header */
 			minsize=long2para(imagesize+(head.minmemory<<4)+256);
 			if (head.maxmemory!=0) maxsize=long2para(imagesize+(head.maxmemory<<4)+256);
@@ -342,12 +333,7 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 		if (maxfree<maxsize) memsize=maxfree;
 		else memsize=maxsize;
 		if (!DOS_AllocateMemory(&pspseg,&memsize)) E_Exit("DOS:Exec error in memory");
-		if (iscom && (machine==MCH_PCJR) && (pspseg<0x2000)) {
-			maxsize=0xffff;
-			/* resize to full extent of memory block */
-			DOS_ResizeMemory(pspseg,&maxsize);
-			memsize=maxsize;
-		}
+		// PCJr-specific memory resize not needed
 		loadseg=pspseg+16;
 		if (!iscom) {
 			/* Check if requested to load program into upper part of allocated memory */

@@ -63,6 +63,11 @@ typedef PhysPt EAPoint;
 
 Bits CPU_Core_Full_Run(void) {
 	FullData inst;
+
+	/* Early exit: avoid unnecessary work when no cycles left */
+	if (CPU_Cycles <= 0)
+		return CBRET_NONE;
+
 	while (CPU_Cycles-->0) {
 #if C_DEBUG
 		cycle_count++;

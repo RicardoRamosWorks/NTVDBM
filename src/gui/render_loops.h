@@ -16,10 +16,28 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#define FC_PTR_ADV(adj) \
+	fcp1 += (adj); \
+	fc   += (adj); \
+	fcn1 += (adj); \
+	fcn2 += (adj);
+
+#define FC_PTRS(pt_t,line) \
+	pt_t *fcp1 = &FC[(line)-1u][1]; (void)fcp1; \
+	pt_t *fc   = &FC[(line)   ][1]; (void)fc;   \
+	pt_t *fcn1 = &FC[(line)+1u][1]; (void)fcn1; \
+	pt_t *fcn2 = &FC[(line)+2u][1]; (void)fcn2;
+
 #if defined (SCALERLINEAR)
-static void conc3d(SCALERNAME,SBPP,L)(void) {
+static inline void conc3d(SCALERNAME,SBPP,L)(void) {
+# if !defined(_MSC_VER)
+	(void)conc3d(SCALERNAME,SBPP,L);
+# endif
 #else
-static void conc3d(SCALERNAME,SBPP,R)(void) {
+static inline void conc3d(SCALERNAME,SBPP,R)(void) {
+# if !defined(_MSC_VER)
+	(void)conc3d(SCALERNAME,SBPP,R);
+# endif
 #endif
 	//Skip the first one for multiline input scalers
 	if (!render.scale.outLine) {
@@ -40,7 +58,7 @@ lastagain:
 	}
 	/* Clear the complete line marker */
 	CC[render.scale.outLine][0] = 0;
-	const PTYPE * fc = &FC[render.scale.outLine][1];
+	FC_PTRS(const PTYPE,render.scale.outLine);
 	PTYPE * line0=(PTYPE *)(render.scale.outWrite);
 	Bit8u * changed = &CC[render.scale.outLine][1];
 	Bitu b;
@@ -63,7 +81,7 @@ lastagain:
 		switch (changeType) {
 		case 0:
 			line0 += SCALERWIDTH * SCALER_BLOCKSIZE;
-			fc += SCALER_BLOCKSIZE;
+			FC_PTR_ADV(SCALER_BLOCKSIZE);
 			continue;
 		case SCALE_LEFT:
 #if (SCALERHEIGHT > 1)
@@ -80,7 +98,7 @@ lastagain:
 #endif
 			SCALERFUNC;
 			line0 += SCALERWIDTH * SCALER_BLOCKSIZE;
-			fc += SCALER_BLOCKSIZE;
+			FC_PTR_ADV(SCALER_BLOCKSIZE);
 			break;
 		case SCALE_LEFT | SCALE_RIGHT:
 #if (SCALERHEIGHT > 1)
@@ -122,10 +140,10 @@ lastagain:
 #if (SCALERHEIGHT > 4)
 			line4 += SCALERWIDTH * (SCALER_BLOCKSIZE -1);
 #endif
-			fc += SCALER_BLOCKSIZE -1;
+			FC_PTR_ADV(SCALER_BLOCKSIZE-1);
 			SCALERFUNC;
 			line0 += SCALERWIDTH;
-			fc++;
+			FC_PTR_ADV(1);
 			break;
 		default:
 #if defined(SCALERLINEAR)
@@ -170,7 +188,7 @@ lastagain:
 #if (SCALERHEIGHT > 4)
 				line4 += SCALERWIDTH;
 #endif
-				fc++;
+				FC_PTR_ADV(1);
 			}
 #if defined(SCALERLINEAR)
 #if (SCALERHEIGHT > 1)

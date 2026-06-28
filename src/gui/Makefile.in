@@ -112,8 +112,7 @@ libgui_a_AR = $(AR) $(ARFLAGS)
 libgui_a_RANLIB = $(RANLIB)
 libgui_a_LIBADD =
 am_libgui_a_OBJECTS = sdlmain.$(OBJEXT) sdl_mapper.$(OBJEXT) \
-	render.$(OBJEXT) render_scalers.$(OBJEXT) midi.$(OBJEXT) \
-	sdl_gui.$(OBJEXT)
+	render.$(OBJEXT) render_scalers.$(OBJEXT) midi.$(OBJEXT)
 libgui_a_OBJECTS = $(am_libgui_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -131,8 +130,8 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/midi.Po ./$(DEPDIR)/render.Po \
-	./$(DEPDIR)/render_scalers.Po ./$(DEPDIR)/sdl_gui.Po \
-	./$(DEPDIR)/sdl_mapper.Po ./$(DEPDIR)/sdlmain.Po
+	./$(DEPDIR)/render_scalers.Po ./$(DEPDIR)/sdl_mapper.Po \
+	./$(DEPDIR)/sdlmain.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -301,7 +300,7 @@ libgui_a_SOURCES = sdlmain.cpp sdl_mapper.cpp dosbox_logo.h \
 	render.cpp render_scalers.cpp render_scalers.h \
 	render_templates.h render_loops.h render_simple.h \
 	midi.cpp midi_win32.h \
-	sdl_gui.cpp dosbox_splash.h
+	dosbox_splash.h
 
 all: all-am
 
@@ -354,7 +353,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/midi.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/render.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/render_scalers.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sdl_gui.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sdl_mapper.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sdlmain.Po@am__quote@ # am--include-marker
 
@@ -505,7 +503,6 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/midi.Po
 	-rm -f ./$(DEPDIR)/render.Po
 	-rm -f ./$(DEPDIR)/render_scalers.Po
-	-rm -f ./$(DEPDIR)/sdl_gui.Po
 	-rm -f ./$(DEPDIR)/sdl_mapper.Po
 	-rm -f ./$(DEPDIR)/sdlmain.Po
 	-rm -f Makefile
@@ -556,7 +553,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/midi.Po
 	-rm -f ./$(DEPDIR)/render.Po
 	-rm -f ./$(DEPDIR)/render_scalers.Po
-	-rm -f ./$(DEPDIR)/sdl_gui.Po
 	-rm -f ./$(DEPDIR)/sdl_mapper.Po
 	-rm -f ./$(DEPDIR)/sdlmain.Po
 	-rm -f Makefile

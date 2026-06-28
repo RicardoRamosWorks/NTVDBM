@@ -478,43 +478,7 @@ static void INLINE gen_fill_branch(const Bit8u* data) {
 	cache_addw((Bit16u)(cache.pos-data-4)>>2,data);
 }
 
-#if 0	// assume for the moment no branch will go farther then +/- 128KB
 
-// conditional jump if register is nonzero
-// for isdword==true the 32bit of the register are tested
-// for isdword==false the lowest 8bit of the register are tested
-static const Bit8u* gen_create_branch_long_nonzero(HostReg reg,bool isdword) {
-	temp1_valid = false;
-	if (!isdword) {
-		cache_addw(0xff);	// andi temp1, reg, 0xff
-		cache_addw(0x3000+(reg<<5)+temp1);
-	}
-	cache_addw(3);			// beq $0, reg, +12
-	cache_addw(0x1000+(isdword?reg:temp1));	
-	DELAY;
-	cache_addd(0x00000000);		// fill j
-	DELAY;
-	return (cache.pos-8);
-}
-
-// compare 32bit-register against zero and jump if value less/equal than zero
-static INLINE const Bit8u* gen_create_branch_long_leqzero(HostReg reg) {
-	temp1_valid = false;
-	cache_addw(3);				// bgtz reg, +12
-	cache_addw(0x1c00+(reg<<5));
-	DELAY;
-	cache_addd(0x00000000);			// fill j 
-	DELAY;
-	return (cache.pos-8);
-}
-
-// calculate long relative offset and fill it into the location pointed to by data
-static void INLINE gen_fill_branch_long(const Bit8u* data) {
-	temp1_valid = false;
-	// this is an absolute branch
-	cache_addd(0x08000000+(((Bit32u)cache.pos>>2)&0x3ffffff),data);
-}
-#else		
 // conditional jump if register is nonzero
 // for isdword==true the 32bit of the register are tested
 // for isdword==false the lowest 8bit of the register are tested
@@ -543,7 +507,7 @@ static INLINE const Bit8u* gen_create_branch_long_leqzero(HostReg reg) {
 static void INLINE gen_fill_branch_long(const Bit8u* data) {
 	gen_fill_branch(data);
 }
-#endif
+
 
 static void gen_run_code(void) {
 	temp1_valid = false;

@@ -296,40 +296,32 @@ void DrawCursorText() {
 static Bit8u gfxReg3CE[9];
 static Bit8u index3C4,gfxReg3C5;
 void SaveVgaRegisters() {
-	if (IS_VGA_ARCH) {
-		for (Bit8u i=0; i<9; i++) {
-			IO_Write	(0x3CE,i);
-			gfxReg3CE[i] = IO_Read(0x3CF);
-		}
-		/* Setup some default values in GFX regs that should work */
-		IO_Write(0x3CE,3);
-		IO_Write(0x3Cf,0);				//disable rotate and operation
-		IO_Write(0x3CE,5);
-		IO_Write(0x3Cf,gfxReg3CE[5]&0xf0);	//Force read/write mode 0
-
-		//Set Map to all planes. Celtic Tales
-		index3C4 = IO_Read(0x3c4);
-		IO_Write(0x3C4,2);
-		gfxReg3C5 = IO_Read(0x3C5);
-		IO_Write(0x3C5,0xF);
-	} else if (machine==MCH_EGA) {
-		//Set Map to all planes.
-		IO_Write(0x3C4,2);
-		IO_Write(0x3C5,0xF);
+	for (Bit8u i=0; i<9; i++) {
+		IO_Write	(0x3CE,i);
+		gfxReg3CE[i] = IO_Read(0x3CF);
 	}
+	/* Setup some default values in GFX regs that should work */
+	IO_Write(0x3CE,3);
+	IO_Write(0x3Cf,0);				//disable rotate and operation
+	IO_Write(0x3CE,5);
+	IO_Write(0x3Cf,gfxReg3CE[5]&0xf0);	//Force read/write mode 0
+
+	//Set Map to all planes. Celtic Tales
+	index3C4 = IO_Read(0x3c4);
+	IO_Write(0x3C4,2);
+	gfxReg3C5 = IO_Read(0x3C5);
+	IO_Write(0x3C5,0xF);
 }
 
 void RestoreVgaRegisters() {
-	if (IS_VGA_ARCH) {
-		for (Bit8u i=0; i<9; i++) {
-			IO_Write(0x3CE,i);
-			IO_Write(0x3CF,gfxReg3CE[i]);
-		}
-
-		IO_Write(0x3C4,2);
-		IO_Write(0x3C5,gfxReg3C5);
-		IO_Write(0x3C4,index3C4);
+	for (Bit8u i=0; i<9; i++) {
+		IO_Write(0x3CE,i);
+		IO_Write(0x3CF,gfxReg3CE[i]);
 	}
+
+	IO_Write(0x3C4,2);
+	IO_Write(0x3C5,gfxReg3C5);
+	IO_Write(0x3C4,index3C4);
 }
 
 void ClipCursorArea(Bit16s& x1, Bit16s& x2, Bit16s& y1, Bit16s& y2,
@@ -496,7 +488,7 @@ void Mouse_CursorMoved(float xrel,float yrel,float x,float y,bool emulate) {
 	} else {
 		if (CurMode->type == M_TEXT) {
 			mouse.x = x*real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8;
-			mouse.y = y*(IS_EGAVGA_ARCH?(real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS)+1):25)*8;
+			mouse.y = y*(real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS)+1)*8;
 		} else if ((mouse.max_x < 2048) || (mouse.max_y < 2048) || (mouse.max_x != mouse.max_y)) {
 			if ((mouse.max_x > 0) && (mouse.max_y > 0)) {
 				mouse.x = x*mouse.max_x;
@@ -650,7 +642,7 @@ void Mouse_AfterNewVideoMode(bool setmode) {
 	case 0x07: {
 		mouse.gran_x = (mode<2)?0xfff0:0xfff8;
 		mouse.gran_y = (Bit16s)0xfff8;
-		Bitu rows = IS_EGAVGA_ARCH?real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS):24;
+		Bitu rows = real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS);
 		if ((rows == 0) || (rows > 250)) rows = 25 - 1;
 		mouse.max_y = 8*(rows+1) - 1;
 		break;

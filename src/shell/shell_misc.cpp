@@ -602,14 +602,6 @@ bool DOS_Shell::Execute(char *name, char *args) {
 		/* Set the command line in the block and save it */
 		block.exec.cmdtail = RealMakeSeg(ss, reg_sp + 0x100);
 		block.SaveData();
-#if 0
-		/* Save CS:IP to some point where i can return them from */
-		Bit32u oldeip=reg_eip;
-		Bit16u oldcs=SegValue(cs);
-		RealPt newcsip=CALLBACK_RealPointer(call_shellstop);
-		SegSet16(cs,RealSeg(newcsip));
-		reg_ip=RealOff(newcsip);
-#endif
 		/* Start up a dos execute interrupt */
 		reg_ax = 0x4b00;
 		// Filename pointer
@@ -622,10 +614,6 @@ bool DOS_Shell::Execute(char *name, char *args) {
 		CALLBACK_RunRealInt(0x21);
 		/* Restore CS:IP and the stack */
 		reg_sp += 0x200;
-#if 0
-		reg_eip=oldeip;
-		SegSet16(cs,oldcs);
-#endif
 	}
 	return true; // Executable started
 }

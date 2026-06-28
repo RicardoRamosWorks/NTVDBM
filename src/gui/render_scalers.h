@@ -70,10 +70,9 @@ typedef enum scalerOperation {
 typedef void (*ScalerLineHandler_t)(const void *src);
 typedef void (*ScalerComplexHandler_t)(void);
 
-extern Bit8u Scaler_Aspect[];
-extern Bit8u diff_table[];
+extern Bit8u *Scaler_Aspect;
 extern Bitu Scaler_ChangedLineIndex;
-extern Bit16u Scaler_ChangedLines[];
+extern Bit16u *Scaler_ChangedLines;
 #if RENDER_USE_ADVANCED_SCALERS>1
 /* Not entirely happy about those +2's since they make a non power of 2, with muls instead of shift */
 typedef Bit8u scalerChangeCache_t [SCALER_COMPLEXHEIGHT][SCALER_COMPLEXWIDTH / SCALER_BLOCKSIZE] ;
@@ -88,7 +87,7 @@ typedef union {
 	Bit16u b16	[SCALER_MAXHEIGHT] [SCALER_MAXWIDTH];
 	Bit8u b8	[SCALER_MAXHEIGHT] [SCALER_MAXWIDTH];
 } scalerSourceCache_t;
-extern scalerSourceCache_t scalerSourceCache;
+extern Bit8u* scalerSourceCache;
 #if RENDER_USE_ADVANCED_SCALERS>1
 extern scalerChangeCache_t scalerChangeCache;
 #endif
@@ -132,4 +131,13 @@ extern ScalerSimpleBlock_t ScaleScan2x;
 #if RENDER_USE_ADVANCED_SCALERS>1
 extern ScalerLineBlock_t ScalerCache;
 #endif
+
+/* Alocação dinâmica de buffers do scaler */
+void scalerSourceCacheAlloc(Bitu size);
+void scalerSourceCacheFree(void);
+void scalerWriteCacheAlloc(unsigned int p);
+void scalerWriteCacheFree(void);
+void Scaler_AspectChangedLinesAlloc(unsigned int h);
+void Scaler_AspectChangedLinesFree(void);
+
 #endif

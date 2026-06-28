@@ -19,18 +19,86 @@
 #include "dosbox.h"
 #include "render.h"
 #include <string.h>
+#include <stdlib.h>
 
-Bit8u Scaler_Aspect[SCALER_MAXHEIGHT];
-Bit16u Scaler_ChangedLines[SCALER_MAXHEIGHT];
+Bit8u *Scaler_Aspect = NULL;
+Bit16u *Scaler_ChangedLines = NULL;
 Bitu Scaler_ChangedLineIndex;
 
 static union {
-	Bit32u b32 [SCALER_MAX_MUL_HEIGHT + 1][SCALER_MAXLINE_WIDTH];
-	Bit16u b16 [SCALER_MAX_MUL_HEIGHT + 1][SCALER_MAXLINE_WIDTH];
-	Bit8u   b8 [SCALER_MAX_MUL_HEIGHT + 1][SCALER_MAXLINE_WIDTH];
-} scalerWriteCache;
+	Bit32u *b32[5];
+	Bit16u *b16[5];
+	Bit8u  *b8[5];
+} scalerWriteCache = {{NULL}};
 
-scalerSourceCache_t scalerSourceCache;
+void scalerWriteCacheFree(void) {
+	if (scalerWriteCache.b8[0]) free(scalerWriteCache.b8[0]);
+	for (unsigned int i = 0; i < 5; i++) scalerWriteCache.b8[i] = NULL;
+}
+
+void scalerWriteCacheAlloc(unsigned int p) {
+	if (!scalerWriteCache.b8[0]) {
+		if ((scalerWriteCache.b8[0]=(Bit8u*)malloc(p*5)) == NULL)
+			return;
+
+		for (unsigned int i = 1; i < 5; i++)
+			scalerWriteCache.b8[i] = scalerWriteCache.b8[i-1] + p;
+	}
+}
+
+void Scaler_AspectChangedLinesFree(void) {
+	if (Scaler_Aspect) free(Scaler_Aspect);
+	Scaler_Aspect = NULL;
+
+	if (Scaler_ChangedLines) free(Scaler_ChangedLines);
+	Scaler_ChangedLines = NULL;
+}
+
+void Scaler_AspectChangedLinesAlloc(unsigned int h) {
+	if (!Scaler_Aspect && h != 0u) {
+		if ((Scaler_Aspect=(Bit8u*)malloc((h+16)*sizeof(Bit8u))) == NULL)
+			return;
+
+		for (unsigned int i = 0; i < (h+16); i++)
+			Scaler_Aspect[i] = 8;
+	}
+
+	if (!Scaler_ChangedLines && h != 0u) {
+		if ((Scaler_ChangedLines=(Bit16u*)malloc((h+16)*sizeof(Bit16u))) == NULL)
+			return;
+
+		for (unsigned int i = 0; i < (h+16); i += 2) {
+			Scaler_ChangedLines[i+0] = 8192;
+			Scaler_ChangedLines[i+1] = 0;
+		}
+	}
+}
+
+/* Buffer de cache do scaler: alocado dinamicamente sob medida */
+Bit8u* scalerSourceCache = NULL;
+
+/* Fallback estático mínimo para modos de vídeo básicos (640x480x8bpp = 307KB) */
+#define SCALER_FALLBACK_CACHE_SIZE (640*480)
+static Bit8u scaler_fallback_cache[SCALER_FALLBACK_CACHE_SIZE];
+
+void scalerSourceCacheAlloc(Bitu size) {
+	scalerSourceCacheFree();
+
+	if (size <= SCALER_FALLBACK_CACHE_SIZE) {
+		/* Modo pequeno: usa fallback estático */
+		scalerSourceCache = scaler_fallback_cache;
+	} else {
+		/* Modo grande: aloca dinamicamente */
+		scalerSourceCache = (Bit8u*)malloc(size);
+	}
+}
+
+void scalerSourceCacheFree(void) {
+	if (scalerSourceCache && scalerSourceCache != scaler_fallback_cache)
+		free(scalerSourceCache);
+	scalerSourceCache = NULL;
+}
+
 #if RENDER_USE_ADVANCED_SCALERS>1
 scalerChangeCache_t scalerChangeCache;
 #endif

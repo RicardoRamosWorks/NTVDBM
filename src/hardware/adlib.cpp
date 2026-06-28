@@ -27,6 +27,13 @@
 #include "mem.h"
 #include "dbopl.h"
 #include "cpu.h"
+#include "hardware.h"
+
+// Stub: DRO capture support was removed from this build
+// Returning NULL causes the capture code to skip cleanly
+FILE * OpenCaptureFile(const char * /*type*/,const char * /*ext*/) {
+	return NULL;
+}
 
 #define RAW_SIZE 1024
 

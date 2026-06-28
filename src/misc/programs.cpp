@@ -614,10 +614,7 @@ void CONFIG::Run(void) {
 			break;
 		}
 		case P_REC_AVI_START:
-			CAPTURE_VideoStart();
-			break;
 		case P_REC_AVI_STOP:
-			CAPTURE_VideoStop();
 			break;
 		case P_START_MAPPER:
 			if (securemode_check())

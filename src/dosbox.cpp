@@ -386,13 +386,7 @@ static void DOSBOX_RealInit(Section *sec) {
 	machine = MCH_VGA;
 	int10.vesa_nolfb = false;
 	int10.vesa_oldvbe = false;
-	if (mtype == "cga") {
-		machine = MCH_CGA;
-	} else if (mtype == "hercules") {
-		machine = MCH_HERC;
-	} else if (mtype == "ega") {
-		machine = MCH_EGA;
-	} else if (mtype == "svga_s3") {
+	if (mtype == "svga_s3") {
 		svgaCard = SVGA_S3Trio;
 	} else if (mtype == "vesa_nolfb") {
 		svgaCard = SVGA_S3Trio;
@@ -443,10 +437,7 @@ void DOSBOX_Init(void) {
 	const char *dmasgus[] = {"3", "0", "1", "5", "6", "7", 0};
 
 	/* Setup all the different modules making up DOSBox */
-	const char *machines[] = {"hercules",
-	                          "cga",
-	                          "ega",
-	                          "vgaonly",
+	const char *machines[] = {"vgaonly",
 	                          "svga_s3",
 	                          "svga_et3000",
 	                          "svga_et4000",
@@ -494,10 +485,10 @@ void DOSBOX_Init(void) {
 	Pbool->Set_help("\n");
 
 	Pmulti = secprop->Add_multi("scaler", Property::Changeable::Always, " ");
-	Pmulti->SetValue("none");
+	Pmulti->SetValue("normal2x");
 	Pmulti->Set_help("\n");
 	Pstring = Pmulti->GetSection()->Add_string(
-	              "type", Property::Changeable::Always, "none");
+	              "type", Property::Changeable::Always, "normal2x");
 
 	const char *scalers[] = {
 		"none",
@@ -549,13 +540,13 @@ void DOSBOX_Init(void) {
 	// Pstring->Set_help("\n");
 
 	Pmulti_remain = secprop->Add_multiremain(
-	                    "cycles", Property::Changeable::Always, "fixed 25000");
+	                    "cycles", Property::Changeable::Always, "auto");
 	Pmulti_remain->Set_help("\n");
 
 	const char *cyclest[] = {"auto", "fixed", "max", "%u", 0};
 	Pstring = Pmulti_remain->GetSection()->Add_string(
-	              "type", Property::Changeable::Always, "fixed 2200");
-	Pmulti_remain->SetValue("fixed 2200");
+	              "type", Property::Changeable::Always, "auto");
+	Pmulti_remain->SetValue("auto");
 	Pstring->Set_values(cyclest);
 
 	Pstring = Pmulti_remain->GetSection()->Add_string(
@@ -651,7 +642,7 @@ void DOSBOX_Init(void) {
 	Pbool = secprop->Add_bool("sbmixer", Property::Changeable::WhenIdle, true);
 	Pbool->Set_help("\n");
 
-	const char *oplmodes[] = {"auto", "cms",      "opl2", "dualopl2",
+	const char *oplmodes[] = {"auto", "opl2", "dualopl2",
 	                          "opl3", "opl3gold", "none", 0
 	                         };
 	Pstring =

@@ -300,7 +300,7 @@ bool DOS_FreeMemory(Bit16u segment) {
 
 
 void DOS_BuildUMBChain(bool umb_active,bool ems_active) {
-	if (umb_active  && (!IS_TANDY_ARCH)) {
+	if (umb_active) {
 		Bit16u first_umb_seg = 0xd000;
 		Bit16u first_umb_size = 0x2000;
 		if(ems_active) first_umb_size = 0x1000;
@@ -417,31 +417,9 @@ void DOS_SetupMemory(void) {
 	DOS_MCB mcb((Bit16u)DOS_MEM_START+mcb_sizes);
 	mcb.SetPSPSeg(MCB_FREE);						//Free
 	mcb.SetType(0x5a);								//Last Block
-	if (machine==MCH_TANDY) {
-		/* memory up to 608k available, the rest (to 640k) is used by
-			the tandy graphics system's variable mapping of 0xb800 */
-		mcb.SetSize(0x9BFF - DOS_MEM_START - mcb_sizes);
-	} else if (machine==MCH_PCJR) {
-		/* memory from 128k to 640k is available */
-		mcb_devicedummy.SetPt((Bit16u)0x2000);
-		mcb_devicedummy.SetPSPSeg(MCB_FREE);
-		mcb_devicedummy.SetSize(0x9FFF - 0x2000);
-		mcb_devicedummy.SetType(0x5a);
-
-		/* exclude PCJr graphics region */
-		mcb_devicedummy.SetPt((Bit16u)0x17ff);
-		mcb_devicedummy.SetPSPSeg(MCB_DOS);
-		mcb_devicedummy.SetSize(0x800);
-		mcb_devicedummy.SetType(0x4d);
-
-		/* memory below 96k */
-		mcb.SetSize(0x1800 - DOS_MEM_START - (2+mcb_sizes));
-		mcb.SetType(0x4d);
-	} else {
-		/* complete memory up to 640k available */
-		/* last paragraph used to add UMB chain to low-memory MCB chain */
-		mcb.SetSize(0x9FFE - DOS_MEM_START - mcb_sizes);
-	}
+	/* complete memory up to 640k available */
+	/* last paragraph used to add UMB chain to low-memory MCB chain */
+	mcb.SetSize(0x9FFE - DOS_MEM_START - mcb_sizes);
 
 	dos.firstMCB=DOS_MEM_START;
 	dos_infoblock.SetFirstMCB(DOS_MEM_START);

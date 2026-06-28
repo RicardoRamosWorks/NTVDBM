@@ -62,7 +62,7 @@ bool MIDI_Available(void);
 #define SB_SH_MASK	((1 << SB_SH)-1)
 
 enum {DSP_S_RESET,DSP_S_RESET_WAIT,DSP_S_NORMAL,DSP_S_HIGHSPEED};
-enum SB_TYPES {SBT_NONE=0,SBT_1=1,SBT_PRO1=2,SBT_2=3,SBT_PRO2=4,SBT_16=6,SBT_GB=7};
+enum SB_TYPES {SBT_NONE=0,SBT_1=1,SBT_PRO1=2,SBT_2=3,SBT_PRO2=4,SBT_16=6};
 enum SB_IRQS {SB_IRQ_8,SB_IRQ_16,SB_IRQ_MPU};
 
 enum DSP_MODES {
@@ -1680,18 +1680,16 @@ private:
 		else if (!strcasecmp(sbtype,"sbpro1")) type=SBT_PRO1;
 		else if (!strcasecmp(sbtype,"sbpro2")) type=SBT_PRO2;
 		else if (!strcasecmp(sbtype,"sb16")) type=SBT_16;
-		else if (!strcasecmp(sbtype,"gb")) type=SBT_GB;
 		else if (!strcasecmp(sbtype,"none")) type=SBT_NONE;
 		else type=SBT_16;
 
 		if (type==SBT_16) {
-			if ((!IS_EGAVGA_ARCH) || !SecondDMAControllerAvailable()) type=SBT_PRO2;
+			if (!SecondDMAControllerAvailable()) type=SBT_PRO2;
 		}
 
-		/* OPL/CMS Init */
+		/* OPL Init */
 		const char * omode=config->Get_string("oplmode");
 		if (!strcasecmp(omode,"none")) opl_mode=OPL_none;
-		else if (!strcasecmp(omode,"cms")) opl_mode=OPL_cms;
 		else if (!strcasecmp(omode,"opl2")) opl_mode=OPL_opl2;
 		else if (!strcasecmp(omode,"dualopl2")) opl_mode=OPL_dualopl2;
 		else if (!strcasecmp(omode,"opl3")) opl_mode=OPL_opl3;
@@ -1701,9 +1699,6 @@ private:
 			switch (type) {
 			case SBT_NONE:
 				opl_mode=OPL_none;
-				break;
-			case SBT_GB:
-				opl_mode=OPL_cms;
 				break;
 			case SBT_1:
 			case SBT_2:
@@ -1741,9 +1736,6 @@ public:
 		switch (oplmode) {
 		case OPL_none:
 			break;
-		case OPL_cms:
-
-			break;
 		case OPL_opl2:
 		// fall-through
 		case OPL_dualopl2:
@@ -1752,7 +1744,7 @@ public:
 			OPL_Init(section,oplmode);
 			break;
 		}
-		if (sb.type==SBT_NONE || sb.type==SBT_GB) return;
+		if (sb.type==SBT_NONE) return;
 
 		sb.chan=MixerChan.Install(&SBLASTER_CallBack,22050,"SB");
 		sb.dsp.state=DSP_S_NORMAL;
@@ -1798,8 +1790,6 @@ public:
 		switch (oplmode) {
 		case OPL_none:
 			break;
-		case OPL_cms:
-			break;
 		case OPL_opl2:
 		// fall-through
 		case OPL_dualopl2:
@@ -1808,7 +1798,7 @@ public:
 			OPL_ShutDown(m_configuration);
 			break;
 		}
-		if (sb.type==SBT_NONE || sb.type==SBT_GB) return;
+		if (sb.type==SBT_NONE) return;
 		DSP_Reset(); // Stop everything
 	}
 }; //End of SBLASTER class

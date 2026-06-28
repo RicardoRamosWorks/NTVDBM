@@ -13,6 +13,6 @@ libhardware_a_SOURCES = adlib.cpp dma.cpp hardware.cpp iohandler.cpp joystick.cp
 			vga.cpp vga_attr.cpp vga_crtc.cpp vga_dac.cpp vga_draw.cpp vga_gfx.cpp vga_other.cpp \
 			vga_memory.cpp vga_misc.cpp vga_seq.cpp vga_xga.cpp vga_s3.cpp vga_tseng.cpp vga_paradise.cpp \
 			voodoo.cpp voodoo_emu.cpp voodoo_interface.cpp voodoo_opengl.cpp voodoo_vogl.cpp \
-			cmos.cpp ipx.cpp ipxserver.cpp dbopl.cpp
+			cmos.cpp dbopl.cpp
 
 

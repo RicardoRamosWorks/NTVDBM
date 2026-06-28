@@ -526,7 +526,7 @@ extern Bit32u TXT_Font_Table[16];
 extern Bit32u TXT_FG_Table[16];
 extern Bit32u TXT_BG_Table[16];
 extern Bit32u Expand16Table[4][16];
-extern Bit32u Expand16BigTable[0x10000];
+
 
 
 #endif
